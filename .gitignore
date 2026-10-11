@@ -1,0 +1,6 @@
+/target/
+/mutants.out/
+/mutants.out.*/
+/coverage/
+*.profraw
+*.profdata

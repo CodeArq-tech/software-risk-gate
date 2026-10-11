@@ -1,0 +1,54 @@
+name: Risk Gate
+description: Analyze pull-request risk and apply configured merge gates
+author: CodeArq.tech
+inputs:
+  config:
+    description: Path to the Risk Gate YAML configuration
+    required: false
+    default: .risk-gate.yaml
+  token:
+    description: GitHub token used to inspect the pull request and update its report
+    required: true
+    default: ${{ github.token }}
+  instant-merge:
+    description: Deprecated compatibility switch; configure instantMerge in YAML
+    required: false
+    default: 'false'
+  version:
+    description: Released risk-gate version to download
+    required: false
+    default: v0.1.0
+outputs:
+  risk:
+    description: Final risk level
+    value: ${{ steps.risk-gate.outputs.risk }}
+  status:
+    description: Technical analysis status
+    value: ${{ steps.risk-gate.outputs.status }}
+  merge_blocked:
+    description: Whether configured gates block mergeability
+    value: ${{ steps.risk-gate.outputs.merge_blocked }}
+  report_url:
+    description: URL of the created or updated report comment
+    value: ${{ steps.risk-gate.outputs.report_url }}
+runs:
+  using: composite
+  steps:
+    - name: Run risk-gate
+      id: risk-gate
+      shell: bash
+      env:
+        RISK_GATE_CONFIG: ${{ inputs.config }}
+        GITHUB_TOKEN: ${{ inputs.token }}
+        GITHUB_REPOSITORY: ${{ github.repository }}
+        GITHUB_EVENT_NAME: ${{ github.event_name }}
+        GITHUB_SHA: ${{ github.sha }}
+      run: |
+        set -euo pipefail
+        asset="risk-gate-x86_64-unknown-linux-gnu"
+        url="https://github.com/${{ github.action_repository }}/releases/download/${{ inputs.version }}/${asset}"
+        curl --fail --location --retry 3 --output "$RUNNER_TEMP/risk-gate" "$url"
+        curl --fail --location --retry 3 --output "$RUNNER_TEMP/risk-gate.sha256" "${url}.sha256"
+        (cd "$RUNNER_TEMP" && sha256sum --check risk-gate.sha256)
+        chmod +x "$RUNNER_TEMP/risk-gate"
+        "$RUNNER_TEMP/risk-gate" --config "$RISK_GATE_CONFIG" --root "$GITHUB_WORKSPACE" --event-path "$GITHUB_EVENT_PATH" --token "$GITHUB_TOKEN" --repository "$GITHUB_REPOSITORY"
