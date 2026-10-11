@@ -17,6 +17,16 @@ the path risk; connected code always remains in the risk calculation.
 cargo run -- --config .risk-gate.yaml --root . --base "$BASE_SHA" --head "$HEAD_SHA"
 ```
 
+Para consultar um PR existente sem efeitos colaterais, use:
+
+    cargo run -- --dry-run --config .risk-gate.yaml --root . \
+      --repository CodeArq-tech/software-risk-gate \
+      --pull-number 123 --token "$GITHUB_TOKEN"
+
+O dry-run consulta os arquivos do PR e retorna JSON com o risco, a análise de
+impacto e a política de gateRules selecionada pela Action. Ele não executa
+validações, não consulta aprovações e não publica comentários.
+
 For the public configuration contract, see
 [`specs/configuration.md`](specs/configuration.md). For implementation order,
 see [`docs/implementation-plan.md`](docs/implementation-plan.md). Quality gates

@@ -1,7 +1,7 @@
 use clap::Parser;
 use risk_gate::config::Config;
 use risk_gate::diff::GitDiffProvider;
-use risk_gate::engine::{analyze, analyze_with_approval};
+use risk_gate::engine::{analyze, analyze_risk_only, analyze_with_approval, plan_policy};
 use risk_gate::gates::ShellExecutor;
 use risk_gate::github::GithubApi;
 use risk_gate::telemetry;
@@ -29,6 +29,11 @@ struct Cli {
     api_url: Option<String>,
     #[arg(long)]
     pull_number: Option<u64>,
+    #[arg(
+        long,
+        help = "Analyze a pull request without comments, approvals, or validations"
+    )]
+    dry_run: bool,
 }
 
 fn main() {
@@ -39,7 +44,11 @@ fn main() {
     );
     match Config::load(&cli.config) {
         Ok(config) => {
-            if let (Some(base), Some(head)) = (cli.base.clone(), cli.head.clone()) {
+            if cli.dry_run {
+                if let Err(error) = run_dry_run(&cli, &config) {
+                    fail(error, 3);
+                }
+            } else if let (Some(base), Some(head)) = (cli.base.clone(), cli.head.clone()) {
                 let diff = GitDiffProvider::new(&cli.root, base, head);
                 match analyze(&config, &cli.root, &diff, &ShellExecutor::new(&cli.root)) {
                     Ok(result) => {
@@ -73,6 +82,47 @@ fn main() {
             std::process::exit(2);
         }
     }
+}
+
+fn run_dry_run(cli: &Cli, config: &Config) -> Result<(), String> {
+    let repository = cli
+        .repository
+        .clone()
+        .ok_or("--repository is required with --dry-run")?;
+    let token = cli
+        .token
+        .clone()
+        .ok_or("--token or GITHUB_TOKEN is required with --dry-run")?;
+    let pull_number = cli
+        .pull_number
+        .ok_or("--pull-number is required with --dry-run")?;
+    let mut api =
+        GithubApi::new(&token, &repository, pull_number).map_err(|error| error.to_string())?;
+    if let Some(api_url) = &cli.api_url {
+        api = api.with_base_url(api_url);
+    }
+    let result = analyze_risk_only(config, &cli.root, &api).map_err(|error| error.to_string())?;
+    let risk = result.assessment.risk;
+    let policy = plan_policy(config, risk);
+    let output = DryRunOutput {
+        mode: "dry-run",
+        repository,
+        pull_number,
+        risk,
+        assessment: result.assessment,
+        changed_files: result.changed.len(),
+        partial_files: result
+            .parsed_files
+            .iter()
+            .filter(|file| file.error.is_some())
+            .count(),
+        policy,
+    };
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&output).map_err(|error| error.to_string())?
+    );
+    Ok(())
 }
 
 fn run_github(cli: &Cli, config: &Config) -> Result<(), String> {
@@ -147,4 +197,19 @@ struct PullRequestEvent {
     number: u64,
     #[serde(rename = "pull_request")]
     _pull_request: serde_json::Value,
+}
+
+#[derive(Debug, serde::Serialize)]
+struct DryRunOutput {
+    mode: &'static str,
+    repository: String,
+    #[serde(rename = "pullNumber")]
+    pull_number: u64,
+    risk: risk_gate::domain::RiskLevel,
+    assessment: risk_gate::risk::RiskAssessment,
+    #[serde(rename = "changedFiles")]
+    changed_files: usize,
+    #[serde(rename = "partialFiles")]
+    partial_files: usize,
+    policy: risk_gate::engine::PlannedPolicy,
 }

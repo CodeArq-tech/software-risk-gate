@@ -62,6 +62,15 @@ relatório antes de abrir um PR:
 cargo run -- --config .risk-gate.yaml --root . --base "$BASE_SHA" --head "$HEAD_SHA"
 ```
 
+Para analisar um PR remoto sem efeitos colaterais, use:
+
+    cargo run -- --dry-run --config .risk-gate.yaml --root . \
+      --repository CodeArq-tech/software-risk-gate \
+      --pull-number 123 --token "$GITHUB_TOKEN"
+
+Esse comando retorna JSON com risk, assessment e policy. O modo é somente
+leitura: não executa validações, não consulta reviews e não publica comentário.
+
 Para implementar o produto, siga o [plano de implementação](implementation-plan.md),
 que organiza as tarefas por dependência e critério de aceite.
 

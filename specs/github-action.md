@@ -37,3 +37,15 @@ O manifesto da primeira Action baixa o binário Linux correspondente à versão
 informada em `version` e executa-o com o contexto do evento. Releases devem
 publicar o asset `risk-gate-x86_64-unknown-linux-gnu` antes que essa versão seja
 usada por outros repositórios.
+
+## CLI em modo dry-run
+
+O binário também deve aceitar --dry-run com --repository, --pull-number e
+--token. Esse modo consulta os arquivos do PR, executa a análise de
+configuração, AST, diff e grafo, e retorna JSON contendo risk, assessment,
+policy e mergeBlockedIfUnsuccessful.
+
+O dry-run não pode publicar ou atualizar comentário, consultar reviews ou
+membros de equipe, nem executar os comandos declarados em validations. Um erro
+de configuração ou consulta retorna código não-zero; uma análise válida retorna
+código zero mesmo quando a política planejada seria bloqueadora.

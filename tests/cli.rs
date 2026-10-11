@@ -158,3 +158,50 @@ fn cli_runs_github_mode_and_writes_outputs() {
     comments.assert();
     create.assert();
 }
+
+#[test]
+fn cli_dry_run_returns_selected_policy_without_side_effects() {
+    let mut server = mockito::Server::new();
+    let files = server
+        .mock("GET", "/repos/o/r/pulls/7/files?per_page=100&page=1")
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(r#"[{"filename":"src/main.py","status":"modified"}]"#)
+        .create();
+    let directory = tempdir().unwrap();
+    fs::create_dir(directory.path().join("src")).unwrap();
+    fs::write(directory.path().join("src/main.py"), "print(1)\n").unwrap();
+    fs::write(
+        directory.path().join("risk.yaml"),
+        "version: 1\nriskMap:\n  - path: src/\n    risk: high\ngateRules:\n  high:\n    instantMerge: false\n    requireApprovalGroup: architects\n    validations: [e2e]\napprovalGroups:\n  architects:\n    users: [alice]\nvalidations:\n  e2e:\n    command: 'touch should-not-run'\n    timeoutSeconds: 42\n",
+    )
+    .unwrap();
+
+    binary()
+        .args([
+            "--dry-run",
+            "--config",
+            "risk.yaml",
+            "--root",
+            ".",
+            "--token",
+            "token",
+            "--repository",
+            "o/r",
+            "--pull-number",
+            "7",
+            "--api-url",
+            &server.url(),
+        ])
+        .current_dir(directory.path())
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("\"mode\": \"dry-run\""))
+        .stdout(predicate::str::contains("\"risk\": \"high\""))
+        .stdout(predicate::str::contains(
+            "\"requireApprovalGroup\": \"architects\"",
+        ))
+        .stdout(predicate::str::contains("\"timeoutSeconds\": 42"));
+    assert!(!directory.path().join("should-not-run").exists());
+    files.assert();
+}

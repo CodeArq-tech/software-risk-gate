@@ -7,6 +7,7 @@ use crate::gates::{
 };
 use crate::report::{ReportInput, render_markdown_limited};
 use crate::risk::{RiskAssessment, assess_risk_with_impact};
+use serde::Serialize;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -32,6 +33,76 @@ pub struct AnalysisResult {
     pub status: AnalysisStatus,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct PlannedValidation {
+    pub name: String,
+    #[serde(rename = "timeoutSeconds")]
+    pub timeout_seconds: u64,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct PlannedPolicy {
+    #[serde(rename = "instantMerge")]
+    pub instant_merge: bool,
+    #[serde(
+        rename = "requireApprovalGroup",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub require_approval_group: Option<String>,
+    pub validations: Vec<PlannedValidation>,
+    #[serde(rename = "mergeBlockedIfUnsuccessful")]
+    pub merge_blocked_if_unsuccessful: bool,
+}
+
+#[derive(Debug)]
+pub struct RiskOnlyResult {
+    pub changed: Vec<ChangedPath>,
+    pub parsed_files: Vec<ParsedFile>,
+    pub assessment: RiskAssessment,
+}
+
+pub fn plan_policy(config: &Config, risk: crate::domain::RiskLevel) -> PlannedPolicy {
+    let rule = config.gate_rules.get(&risk).cloned().unwrap_or_default();
+    let validations = rule
+        .validations
+        .iter()
+        .filter_map(|name| {
+            config
+                .validations
+                .get(name)
+                .map(|definition| PlannedValidation {
+                    name: name.clone(),
+                    timeout_seconds: definition.timeout_seconds(),
+                })
+        })
+        .collect();
+    PlannedPolicy {
+        instant_merge: rule.instant_merge,
+        require_approval_group: rule.require_approval_group,
+        validations,
+        merge_blocked_if_unsuccessful: !rule.instant_merge,
+    }
+}
+
+pub fn analyze_risk_only<D: DiffProvider>(
+    config: &Config,
+    root: &std::path::Path,
+    diff: &D,
+) -> Result<RiskOnlyResult, AnalysisError> {
+    let changed = diff.changed_paths()?;
+    if changed.is_empty() {
+        return Err(AnalysisError::EmptyDiff);
+    }
+    let parsed_files =
+        parse_project_with_limits(root, config.limits.max_files, config.limits.max_ast_nodes)?;
+    let assessment = assess_risk_with_impact(&config.risk_map, &changed, &parsed_files);
+    Ok(RiskOnlyResult {
+        changed,
+        parsed_files,
+        assessment,
+    })
+}
+
 pub fn analyze<D: DiffProvider, E: ValidationExecutor>(
     config: &Config,
     root: &std::path::Path,
@@ -48,13 +119,11 @@ pub fn analyze_with_approval<D: DiffProvider, E: ValidationExecutor>(
     executor: &E,
     approval_checker: Option<&dyn ApprovalChecker>,
 ) -> Result<AnalysisResult, AnalysisError> {
-    let changed = diff.changed_paths()?;
-    if changed.is_empty() {
-        return Err(AnalysisError::EmptyDiff);
-    }
-    let parsed_files =
-        parse_project_with_limits(root, config.limits.max_files, config.limits.max_ast_nodes)?;
-    let assessment = assess_risk_with_impact(&config.risk_map, &changed, &parsed_files);
+    let RiskOnlyResult {
+        parsed_files,
+        assessment,
+        ..
+    } = analyze_risk_only(config, root, diff)?;
     let rule = config
         .gate_rules
         .get(&assessment.risk)
@@ -175,5 +244,45 @@ mod tests {
         )
         .unwrap_err();
         assert!(matches!(error, AnalysisError::EmptyDiff));
+    }
+
+    #[test]
+    fn plans_the_gate_without_executing_validations() {
+        let config = Config {
+            version: 1,
+            risk_map: vec![rule_for_test("src/", RiskLevel::High)],
+            gate_rules: BTreeMap::from([(
+                RiskLevel::High,
+                GateRule {
+                    instant_merge: false,
+                    require_approval_group: Some("architects".into()),
+                    validations: vec!["e2e".into()],
+                },
+            )]),
+            validations: BTreeMap::from([(
+                "e2e".into(),
+                ValidationConfig::Detailed {
+                    command: "touch should-not-run".into(),
+                    timeout_seconds: Some(42),
+                },
+            )]),
+            approval_groups: BTreeMap::new(),
+            limits: Default::default(),
+        };
+        let plan = plan_policy(&config, RiskLevel::High);
+        assert!(!plan.instant_merge);
+        assert_eq!(plan.require_approval_group.as_deref(), Some("architects"));
+        assert_eq!(plan.validations[0].name, "e2e");
+        assert_eq!(plan.validations[0].timeout_seconds, 42);
+        assert!(plan.merge_blocked_if_unsuccessful);
+    }
+
+    fn rule_for_test(path: &str, risk: RiskLevel) -> RiskRule {
+        RiskRule {
+            path: path.into(),
+            risk,
+            description: None,
+            new_code_policy: Default::default(),
+        }
     }
 }

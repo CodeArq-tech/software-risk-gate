@@ -1,7 +1,7 @@
 use crate::config::{NewCodePolicy, RiskRule, normalize_path};
 use crate::domain::{AstNode, ChangedPath, ParsedFile, RiskLevel};
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 pub struct RiskEvidence {
     pub path: String,
     pub risk: RiskLevel,
@@ -11,7 +11,7 @@ pub struct RiskEvidence {
     pub ignored_isolated_new_code: bool,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 pub struct ImpactEvidence {
     pub changed_path: String,
     pub related_path: String,
@@ -21,7 +21,7 @@ pub struct ImpactEvidence {
     pub path: Vec<String>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 pub struct RiskAssessment {
     pub risk: RiskLevel,
     pub evidence: Vec<RiskEvidence>,

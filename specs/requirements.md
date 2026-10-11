@@ -96,3 +96,16 @@ Toda análise deve gerar um comentário idempotente no PR contendo:
 
 O comentário deve ser atualizado quando já existir a marca
 `<!-- risk-gate:report -->`; não deve criar uma nova mensagem a cada execução.
+
+## RF-10 — Dry-run remoto
+
+O CLI deve aceitar --dry-run --repository owner/name --pull-number N --token
+TOKEN para analisar um PR remoto sem alterar o GitHub. O resultado deve ser
+JSON e informar o risco, o assessment de impacto e a política selecionada em
+gateRules, incluindo validações, timeout, grupo de aprovação, instantMerge e
+se uma falha bloquearia o merge.
+
+O dry-run não executa validações, não consulta aprovações e não cria nem
+atualiza comentários. Uma análise válida retorna sucesso independentemente de
+a política planejada ser bloqueadora; falhas de configuração, API, AST ou diff
+retornam erro.
