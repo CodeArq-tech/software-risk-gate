@@ -1,24 +1,24 @@
-# Contrato de `.risk-gate.yaml`
+# .risk-gate.yaml Contract
 
-O formato é YAML. Chaves desconhecidas devem ser rejeitadas na versão inicial,
-para evitar falsa sensação de configuração aplicada.
+The format is YAML. Unknown keys must be rejected in the initial version to
+avoid creating a false impression that a setting was applied.
 
-```yaml
+~~~yaml
 version: 1
 
 riskMap:
   - path: src/payment/
     risk: danger
-    description: "Processamento de pagamentos e autorização financeira"
+    description: "Payment processing and financial authorization"
   - path: tests/
     risk: minimal
-    description: "Testes automatizados"
+    description: "Automated tests"
   - path: infra/database/
     risk: danger
-    description: "Migrações, acesso e infraestrutura do banco"
+    description: "Database migrations, access, and infrastructure"
   - path: src/instructions/
     risk: normal
-    description: "Instruções usadas pelo runtime"
+    description: "Instructions used by the runtime"
     newCodePolicy: include
 
 gateRules:
@@ -47,53 +47,51 @@ limits:
   maxFiles: 10000
   maxAstNodes: 1000000
   maxCommentBytes: 60000
-```
+~~~
 
-## Forma mínima
+## Minimal form
 
-O comando `risk-gate init` gera uma forma mínima permissiva para edição. A
-regra `path: ./` representa a raiz inteira do repositório; ela pode ser
-substituída por regras mais específicas. A configuração gerada mantém
-`instantMerge: true` em todos os níveis e não define validações nem grupos de
-aprovação.
+The risk-gate init command generates a permissive form for editing. The path:
+./ rule represents the entire repository and can be replaced with more
+specific rules. The generated configuration keeps instantMerge: true for every
+level and defines no validations or approval groups.
 
-`riskMap` é obrigatório e não pode ser vazio. Cada item contém `path`, `risk`
-e pode conter `description` e `newCodePolicy`. Os níveis válidos são exatamente
-`minimal`, `low`, `normal`, `high` e `danger`.
+riskMap is required and cannot be empty. Each item contains path and risk and
+may contain description and newCodePolicy. Valid levels are exactly minimal,
+low, normal, high, and danger.
 
-`newCodePolicy` controla código novo em uma regra: `include` (padrão) mantém o
-risco da regra mesmo quando o arquivo novo é isolado; `ignore` reduz para
-`minimal` somente quando não existe ligação de dependência com outro arquivo
-que pertença a qualquer regra. Se houver uma ligação direta ou transitiva, o
-risco da regra é aplicado e a cadeia aparece no relatório do PR.
+newCodePolicy controls new code under a rule: include, the default, preserves
+the rule risk even when a new file is isolated; ignore reduces it to minimal
+only when there is no dependency link to another file belonging to any rule.
+When a direct or transitive link exists, the rule risk applies and the chain
+appears in the PR report.
 
-`gateRules` pode conter qualquer nível. Os campos válidos de uma regra são:
+gateRules may contain any risk level. Valid fields are:
 
-- `instantMerge: boolean`;
-- `requireApprovalGroup: string`;
-- `validations: [string, ...]`.
+- instantMerge: boolean;
+- requireApprovalGroup: string;
+- validations: a list of names.
 
-`validations` é um mapa de nomes para objetos com `command` e opcionalmente
-`timeoutSeconds`. Por compatibilidade futura, a implementação pode aceitar uma
-string como atalho, mas deve normalizá-la para o mesmo modelo e documentar o
-atalho em testes.
+validations maps names to objects with command and optional timeoutSeconds.
+For compatibility, a string shorthand may also be accepted and normalized to
+the same model.
 
-`approvalGroups` resolve nomes locais para uma equipe (`team: org/team`) ou
-logins explícitos (`users: [alice, bob]`). `requireApprovalGroup` sem uma
-entrada correspondente deve falhar na validação da configuração.
+approvalGroups resolves local names to a team, such as org/team, or explicit
+logins, such as users: [alice, bob]. A requireApprovalGroup entry without a
+matching group must fail configuration validation.
 
-`limits` é opcional e possui valores seguros por padrão. `maxFiles` limita os
-arquivos percorridos, `maxAstNodes` limita a árvore agregada e
-`maxCommentBytes` limita o comentário publicado no PR. Todos devem ser
-inteiros positivos; exceder um limite falha a análise de forma explícita.
+limits is optional and has safe defaults. maxFiles limits traversed files,
+maxAstNodes limits the aggregate tree, and maxCommentBytes limits the PR
+comment. All values must be positive integers; exceeding a limit must fail the
+analysis explicitly.
 
-## Semântica de paths
+## Path semantics
 
-Paths são relativos à raiz, normalizados e comparados com separadores `/`.
-Regras mais específicas vencem regras menos específicas quando apontam para o
-mesmo arquivo; depois disso, o risco máximo entre todas as regras aplicáveis é
-usado. Assim, uma área `danger` nunca é rebaixada por uma regra de diretório
-mais ampla.
+Paths are relative to the repository root, normalized, and compared with /
+separators. More specific rules win when they point to the same file; the
+maximum risk among all applicable rules is then used. A danger area can never
+be downgraded by a broader directory rule.
 
-Exemplo: `src/payment/checkout.py` casa com `src/` e `src/payment/`; o maior
-nível aplicável é usado e ambas as descrições podem ser incluídas no relatório.
+For example, src/payment/checkout.py matches src/ and src/payment/; the
+highest applicable level is used and both descriptions may be included in the
+report.

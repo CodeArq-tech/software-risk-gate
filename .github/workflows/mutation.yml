@@ -1,0 +1,19 @@
+name: Mutation testing
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  mutation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: taiki-e/install-action@cargo-mutants
+      - run: cargo mutants --baseline run --copy-target true --minimum-test-timeout 60 --no-shuffle -j 4
+      - run: bash scripts/check-mutation-score.sh

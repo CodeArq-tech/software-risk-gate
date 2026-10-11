@@ -1,43 +1,43 @@
-# Arquitetura de referência
+# Reference Architecture
 
-O binário deve ser pequeno e adequado a uma Action, mas a lógica deve ser
-testável como biblioteca.
+The binary must be small and suitable for an Action, while its logic must be
+testable as a library.
 
-```text
+~~~text
 CLI
- ├─ input: workspace, event/PR, token e opções
+ ├─ input: workspace, event/PR, token, and options
  ├─ ConfigLoader
- ├─ ProjectWalker -> LanguageParser -> CommonAst
  ├─ DiffProvider
- ├─ RiskMapper -> RiskAssessment
- ├─ GateEngine -> ValidationRunner / ApprovalChecker
- └─ ReportRenderer -> GitHubCommenter + ActionOutputs
-```
+ ├─ ProjectWalker + LanguageParsers
+ ├─ RiskMapper + DependencyGraph
+ ├─ GateEngine + ValidationRunner
+ ├─ GithubAdapter
+ └─ ReportRenderer + outputs
+~~~
 
-## Fronteiras
+## Component boundaries
 
-- `ConfigLoader`: lê e valida `.risk-gate.yaml`; não chama GitHub.
-- `LanguageParser`: um adaptador por linguagem; retorna erros estruturados.
-- `DiffProvider`: abstrai `git diff` local e API/evento do GitHub.
-- `RiskMapper`: recebe AST, paths e diff; não executa comandos.
-- `ValidationRunner`: executa apenas validações selecionadas e produz
-  resultados; não decide risco.
-- `ApprovalChecker` e `GitHubCommenter`: usam uma interface GitHub mockável.
-- `GateEngine`: combina risco, aprovações e validações em um resultado
-  determinístico.
+- ConfigLoader reads and validates .risk-gate.yaml and does not call GitHub.
+- LanguageParser has one adapter per language and returns structured errors.
+- RiskMapper receives ASTs, paths, and diff data and does not execute commands.
+- ValidationRunner executes only selected validations and produces results; it
+  does not decide risk.
+- ApprovalChecker and GitHubCommenter use a mockable GitHub interface.
+- GateEngine combines risk, approvals, and validations into a deterministic
+  result.
 
-O domínio não deve depender de variáveis de ambiente do GitHub. A adaptação de
-`GITHUB_EVENT_PATH`, `GITHUB_REPOSITORY`, `GITHUB_TOKEN` e outputs deve ficar na
-CLI.
+The domain must not depend on GitHub environment variables. Adaptation of
+GITHUB_EVENT_PATH, GITHUB_REPOSITORY, GITHUB_TOKEN, and outputs belongs in the
+CLI and Action boundary.
 
-## Segurança e operação
+## Security and operations
 
-O token deve receber somente as permissões documentadas pela Action. Saídas de
-comandos e conteúdo do PR devem ser escapados antes de virar Markdown. Comandos
-devem rodar sem `shell -c` quando possível; se o shell for necessário para
-suportar comandos configuráveis, o executor precisa registrar a decisão,
-aplicar timeout e não concatenar dados do evento.
+The token must receive only the permissions documented by the Action. Command
+output and PR content must be escaped before becoming Markdown. Commands should
+avoid shell -c when possible; when a shell is required for configurable
+commands, the executor must record the decision, apply a timeout, and never
+concatenate event data.
 
-A árvore completa pode ser grande. O sistema pode cachear parsers e índices,
-mas o cache não pode alterar o resultado nem ocultar erro de parsing. O
-relatório deve informar contagens de arquivos, nós e parsers.
+The complete tree can be large. The system may cache parsers and indexes, but
+the cache must not change results or hide parsing errors. Reports must include
+file, node, and parser counts.

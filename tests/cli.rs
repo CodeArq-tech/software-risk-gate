@@ -52,6 +52,12 @@ fn cli_loads_configuration_without_diff_context() {
     binary()
         .arg("--config")
         .arg(directory.path().join("risk.yaml"))
+        .env_remove("GITHUB_BASE_SHA")
+        .env_remove("GITHUB_SHA")
+        .env_remove("GITHUB_EVENT_PATH")
+        .env_remove("GITHUB_TOKEN")
+        .env_remove("GITHUB_REPOSITORY")
+        .env_remove("GITHUB_API_URL")
         .assert()
         .success()
         .stdout(predicate::str::contains("loaded 1 risk rules"));

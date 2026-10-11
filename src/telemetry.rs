@@ -25,10 +25,25 @@ fn render(name: &str, fields: &[(&str, String)]) -> Option<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::Mutex;
+
+    static LOG_ENV_LOCK: Mutex<()> = Mutex::new(());
 
     #[test]
     fn disabled_logging_does_not_require_output_configuration() {
+        let _guard = LOG_ENV_LOCK.lock().unwrap();
+        unsafe { std::env::remove_var("RISK_GATE_LOG") };
         assert!(event("test", &[("value", "secret".into())]).is_none());
+    }
+
+    #[test]
+    fn enabled_logging_returns_and_emits_json() {
+        let _guard = LOG_ENV_LOCK.lock().unwrap();
+        unsafe { std::env::set_var("RISK_GATE_LOG", "json") };
+        let result = event("test", &[("value", "secret".into())]);
+        unsafe { std::env::remove_var("RISK_GATE_LOG") };
+        assert!(result.is_some());
+        assert!(result.unwrap().contains(r#""event":"test""#));
     }
 
     #[test]

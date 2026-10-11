@@ -1,14 +1,13 @@
-# Checklist de release
+# Release Checklist
 
-- [ ] Atualizar a versão em `Cargo.toml`, `action.yml` e no changelog.
-- [ ] Executar `cargo fmt --all -- --check`.
-- [ ] Executar clippy e todos os testes.
-- [ ] Confirmar cobertura de linhas > 95% no workspace.
-- [ ] Confirmar mutation score > 95%.
-- [ ] Construir o binário Linux com `--release --locked`.
-- [ ] Gerar `risk-gate-x86_64-unknown-linux-gnu.sha256`.
-- [ ] Publicar binário e checksum na mesma tag `vX.Y.Z`.
-- [ ] Validar a Action em um PR de teste com permissões de leitura do PR e
-  escrita de comentários.
-- [ ] Confirmar que outputs `risk`, `status`, `merge_blocked` e `report_url`
-  estão disponíveis para jobs seguintes.
+- [ ] Update the version in Cargo.toml, action.yml, and the changelog.
+- [ ] Run cargo fmt, Clippy, and all tests.
+- [ ] Confirm line coverage is above 95% in the workspace.
+- [ ] Confirm mutation score is above 95%.
+- [ ] Build the Linux binary with --release --locked.
+- [ ] Generate a SHA-256 checksum for every release asset.
+- [ ] Publish binaries and checksums under the same vX.Y.Z tag.
+- [ ] Validate the Action in a test PR with PR-read and comment-write
+      permissions.
+- [ ] Confirm risk, status, merge_blocked, and report_url outputs are available
+      to downstream jobs.

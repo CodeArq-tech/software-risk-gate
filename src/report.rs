@@ -454,6 +454,14 @@ mod tests {
         let isolated_mermaid = render_impact_mermaid(&isolated_impact_assessment);
         assert!(isolated_mermaid.contains("impact_0[\"src/only.py\"]"));
         assert!(!isolated_mermaid.contains("-->"));
+
+        let isolated_report = render_markdown(&ReportInput {
+            assessment: &isolated_impact_assessment,
+            gate: None,
+            parsed_files: &[],
+            version: "test",
+        });
+        assert!(!isolated_report.contains("chain:"));
     }
 
     #[test]
@@ -468,7 +476,7 @@ mod tests {
                 assessment: &assessment,
                 gate: None,
                 parsed_files: &[],
-                version: "á",
+                version: "release 🚀",
             },
             20,
         );
@@ -495,8 +503,14 @@ mod tests {
             3,
         );
         assert!(tiny.len() <= 3);
-        assert_eq!(utf8_prefix_len("éclair", 2), 2);
-        assert_eq!(utf8_prefix_len("éclair", 6), 6);
+        assert_eq!(utf8_prefix_len("release 🚀", 9), 8);
+        assert_eq!(utf8_prefix_len("release 🚀", 12), 12);
         assert_eq!(utf8_prefix_len("abc", 10), 3);
+
+        let suffix = "\n\n_Report truncated by configured resource limit._\n";
+        assert_eq!(
+            truncate_utf8("abcdefghij".repeat(10), suffix.len() + 4),
+            format!("abcd{suffix}")
+        );
     }
 }

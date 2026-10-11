@@ -1,51 +1,57 @@
-# Contrato da GitHub Action
+# GitHub Action Contract
 
-## Entradas
+The Action must accept, at minimum, a configuration file path, a diff mode
+(local or GitHub), and a default timeout. The token and PR context must come
+from official GitHub Actions inputs or environment variables and must never be
+written to the report.
 
-A Action deve aceitar, no mínimo, caminho do arquivo de configuração, modo de
-obter o diff (`local` ou `github`) e timeout padrão. O token e o contexto do PR
-devem vir das entradas/ambiente oficial do GitHub Actions, sem serem gravados
-no relatório.
+## Outputs
 
-## Saídas
+The Action must publish outputs consumable by later jobs:
 
-Devem ser publicados outputs consumíveis por jobs posteriores:
+- risk: final risk level;
+- status: technical analysis status;
+- merge_blocked: whether configured gates block mergeability;
+- report_url or a comment identifier, when available.
 
-- `risk`: nível final;
-- `status`: `SUCCESS`, `PARTIAL` ou `FAILED`;
-- `merge_blocked`: `true` ou `false`;
-- `report_url` ou identificador do comentário, quando disponível.
+The process may exit with code zero only when configuration is valid, analysis
+is non-fatal, all required validations succeed, required approvals are
+satisfied or instantMerge is true, and the comment is published, except in
+offline test mode. instantMerge changes only merge_blocked and the blocking
+exit code; it does not turn a technical FAILED status into a correct analysis.
 
-O processo deve sair com código zero somente quando todas as condições abaixo
-forem verdadeiras: configuração válida, análise não fatal, todas as
-validações exigidas com sucesso, aprovações exigidas satisfeitas ou
-`instantMerge: true`, e comentário publicado (exceto em modo offline de
-teste). `instantMerge` altera apenas `merge_blocked`/exit code do bloqueio; não
-transforma `FAILED` técnico em análise correta.
+Authentication, permission, comment, or diff failures must be visible and must
+not be presented as minimal risk.
 
-Falha de autenticação, permissão, comentário ou obtenção do diff deve ser
-visível e não pode ser apresentada como risco `minimal`.
+## Expected permissions
 
-## Permissões esperadas
+Action documentation must declare the permissions required to read Pull
+Requests and publish or update comments. When a permission is unavailable, the
+system must explain it in the report without attempting to bypass repository
+policy.
 
-A documentação da Action deve declarar as permissões necessárias para ler
-Pull Requests e publicar/atualizar comentários. O sistema deve explicar no
-relatório quando a permissão não está disponível, sem tentar contornar a
-política do repositório.
+The initial Action downloads the Linux binary matching the version supplied in
+version and runs it with the event context. Releases must publish the asset
+risk-gate-x86_64-unknown-linux-gnu before another repository uses that version.
 
-O manifesto da primeira Action baixa o binário Linux correspondente à versão
-informada em `version` e executa-o com o contexto do evento. Releases devem
-publicar o asset `risk-gate-x86_64-unknown-linux-gnu` antes que essa versão seja
-usada por outros repositórios.
+## CLI dry-run mode
 
-## CLI em modo dry-run
+The binary must accept --dry-run with --repository, --pull-number, and --token.
+This mode queries PR files, runs configuration, AST, diff, and graph analysis,
+and returns JSON containing risk, assessment, and the selected policy.
 
-O binário também deve aceitar --dry-run com --repository, --pull-number e
---token. Esse modo consulta os arquivos do PR, executa a análise de
-configuração, AST, diff e grafo, e retorna JSON contendo risk, assessment,
-policy e mergeBlockedIfUnsuccessful.
+Dry-run must not publish or update comments, query reviews or team members, or
+execute commands declared in validations. Configuration or query errors return
+a non-zero code; a valid analysis returns zero even when the planned policy
+would block the merge.
 
-O dry-run não pode publicar ou atualizar comentário, consultar reviews ou
-membros de equipe, nem executar os comandos declarados em validations. Um erro
-de configuração ou consulta retorna código não-zero; uma análise válida retorna
-código zero mesmo quando a política planejada seria bloqueadora.
+## CLI AST-impact mode
+
+The binary must accept --ast-impact with --repository, --pull-number, --token,
+and --root without requiring .risk-gate.yaml. It must query PR files, build
+ASTs from files available in the checkout, identify modules and references, and
+return dependency chains connecting changed files to other modules.
+
+The JSON result must include changed files, language, modules, references,
+partial errors, and ordered impacts. This mode does not calculate risk, select
+gateRules, execute validations, or publish comments.

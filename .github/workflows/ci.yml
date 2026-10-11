@@ -19,7 +19,6 @@ jobs:
         with:
           components: rustfmt, clippy, llvm-tools-preview
       - uses: taiki-e/install-action@cargo-llvm-cov
-      - uses: taiki-e/install-action@cargo-mutants
       - name: Require branch rebased on master
         run: |
           git fetch --no-tags origin master
@@ -32,5 +31,3 @@ jobs:
         run: cargo clippy --all-targets --all-features -- -D warnings
       - run: cargo test --all-targets --all-features
       - run: cargo llvm-cov --workspace --all-features --fail-under-lines 95.01
-      - run: cargo mutants --baseline run --copy-target true --minimum-test-timeout 60 --no-shuffle -j 4
-      - run: bash scripts/check-mutation-score.sh

@@ -1,27 +1,29 @@
-# Especificações do Risk Gate
+# Risk Gate Specifications
 
-Esta pasta define os contratos do produto. Os documentos são normativos para
-implementação e testes; exemplos em `docs/` são ilustrativos, mas devem seguir
-estes contratos.
+This directory defines product contracts. These documents are normative for
+implementation and tests; examples in docs/ are illustrative but must follow
+the same contracts.
 
-- [Requisitos e fluxo](requirements.md)
-- [Contrato de configuração](configuration.md)
-- [Arquitetura](architecture.md)
-- [GitHub Action e estados](github-action.md)
+## Documents
 
-O trabalho de implementação está decomposto em tarefas no
-[`docs/implementation-plan.md`](../docs/implementation-plan.md).
+- configuration.md: the .risk-gate.yaml contract;
+- requirements.md: functional requirements and acceptance rules;
+- architecture.md: component boundaries and operational constraints;
+- github-action.md: Action inputs, outputs, permissions, and CLI modes;
+- decisions/: architecture decision records.
 
-## Termos
+Implementation work is tracked in docs/implementation-plan.md.
 
-- **arquivo alterado**: caminho retornado pelo diff do Pull Request;
-- **módulo**: unidade semântica descoberta na AST, associada a um arquivo e a
-  um caminho lógico;
-- **path rule**: entrada do `riskMap` que relaciona um prefixo de caminho a um
-  nível e, opcionalmente, a uma descrição;
-- **gate**: comportamento aplicado após o risco máximo ser calculado;
-- **validação**: comando nomeado que precisa terminar com sucesso quando for
-  exigido.
+## Normative vocabulary
 
-As palavras “deve” e “não pode” são obrigatórias. “Pode” indica extensão
-compatível, sem alterar o comportamento definido.
+- changed file: a path returned by the Pull Request diff;
+- module: a semantic unit discovered in the AST and associated with a file and
+  logical path;
+- path rule: a riskMap entry that maps a path prefix to a level and optional
+  description;
+- gate: behavior applied after maximum risk is calculated;
+- validation: a named command that must succeed when selected;
+- approval group: a GitHub team or explicit user set required by a gate.
+
+The words must and must not are mandatory requirements. May describes a
+compatible extension that does not change defined behavior.
