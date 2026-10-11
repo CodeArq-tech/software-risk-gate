@@ -47,8 +47,8 @@ runs:
         set -euo pipefail
         asset="risk-gate-x86_64-unknown-linux-gnu"
         url="https://github.com/CodeArq-tech/software-risk-gate/releases/download/${{ inputs.version }}/${asset}"
-        curl --fail --location --retry 3 --output "$RUNNER_TEMP/risk-gate" "$url"
-        curl --fail --location --retry 3 --output "$RUNNER_TEMP/risk-gate.sha256" "${url}.sha256"
-        (cd "$RUNNER_TEMP" && sha256sum --check risk-gate.sha256)
-        chmod +x "$RUNNER_TEMP/risk-gate"
-        "$RUNNER_TEMP/risk-gate" --config "$RISK_GATE_CONFIG" --root "$GITHUB_WORKSPACE" --event-path "$GITHUB_EVENT_PATH" --token "$GITHUB_TOKEN" --repository "$GITHUB_REPOSITORY"
+        curl --fail --location --retry 3 --output "$RUNNER_TEMP/$asset" "$url"
+        curl --fail --location --retry 3 --output "$RUNNER_TEMP/$asset.sha256" "${url}.sha256"
+        (cd "$RUNNER_TEMP" && sha256sum --check "$asset.sha256")
+        chmod +x "$RUNNER_TEMP/$asset"
+        "$RUNNER_TEMP/$asset" --config "$RISK_GATE_CONFIG" --root "$GITHUB_WORKSPACE" --event-path "$GITHUB_EVENT_PATH" --token "$GITHUB_TOKEN" --repository "$GITHUB_REPOSITORY"
