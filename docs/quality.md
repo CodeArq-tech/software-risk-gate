@@ -29,8 +29,8 @@ Para diagnóstico opcional, defina `RISK_GATE_LOG=json`. Eventos estruturados
 serão enviados para stderr; tokens, comandos de validação e respostas da API
 não são incluídos.
 
-Na validação atual, o score foi `96,53%` (`250/259`), acima da meta de 95%.
-O relatório registrou seis sobreviventes e três timeouts; os sobreviventes
+Na validação atual, o score foi `96,38%` (`266/276`), acima da meta de 95%.
+O relatório registrou sete sobreviventes e três timeouts; os sobreviventes
 restantes estão concentrados em uma condição de parsing de referências, no
 ramo de conversão de nós Tree-sitter, em limites de truncamento, na condição
 de auto-referência do grafo e no wrapper opcional de telemetria. Eles ficam

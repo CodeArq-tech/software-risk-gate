@@ -71,6 +71,15 @@ Para analisar um PR remoto sem efeitos colaterais, use:
 Esse comando retorna JSON com risk, assessment e policy. O modo é somente
 leitura: não executa validações, não consulta reviews e não publica comentário.
 
+Quando não houver .risk-gate.yaml, use o modo ast-impact:
+
+    cargo run -- --ast-impact --root /path/to/condominio \
+      --repository Lar21/condominio --pull-number 31554 \
+      --token "$GITHUB_TOKEN"
+
+Ele retorna JSON com os arquivos alterados, módulos encontrados pela AST,
+referências e as cadeias de dependência afetadas, sem risco ou gates.
+
 Para implementar o produto, siga o [plano de implementação](implementation-plan.md),
 que organiza as tarefas por dependência e critério de aceite.
 

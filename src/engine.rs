@@ -6,7 +6,9 @@ use crate::gates::{
     ApprovalChecker, GateError, GateResult, ValidationExecutor, evaluate_gate, evaluate_gate_rule,
 };
 use crate::report::{ReportInput, render_markdown_limited};
-use crate::risk::{RiskAssessment, assess_risk_with_impact};
+use crate::risk::{
+    GraphImpact, RiskAssessment, assess_risk_with_impact, graph_impacts, module_names,
+};
 use serde::Serialize;
 use thiserror::Error;
 
@@ -59,6 +61,71 @@ pub struct RiskOnlyResult {
     pub changed: Vec<ChangedPath>,
     pub parsed_files: Vec<ParsedFile>,
     pub assessment: RiskAssessment,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct AstImpactFile {
+    pub path: String,
+    #[serde(rename = "oldPath", skip_serializing_if = "Option::is_none")]
+    pub old_path: Option<String>,
+    #[serde(rename = "isNew")]
+    pub is_new: bool,
+    pub language: Option<String>,
+    pub modules: Vec<String>,
+    pub references: Vec<String>,
+    pub error: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct AstImpactResult {
+    #[serde(rename = "changedFiles")]
+    pub changed_files: Vec<AstImpactFile>,
+    pub impacts: Vec<GraphImpact>,
+    #[serde(rename = "partialFiles")]
+    pub partial_files: usize,
+}
+
+pub fn analyze_ast_impact<D: DiffProvider>(
+    root: &std::path::Path,
+    diff: &D,
+) -> Result<AstImpactResult, AnalysisError> {
+    let changed = diff.changed_paths()?;
+    if changed.is_empty() {
+        return Err(AnalysisError::EmptyDiff);
+    }
+    let limits = crate::config::ResourceLimits {
+        max_files: 50_000,
+        max_ast_nodes: 25_000_000,
+        max_comment_bytes: 60_000,
+    };
+    let parsed_files = parse_project_with_limits(root, limits.max_files, limits.max_ast_nodes)?;
+    let changed_files = changed
+        .iter()
+        .map(|changed_path| {
+            let path = changed_path.path.replace('\\', "/");
+            let parsed = parsed_files.iter().find(|file| file.path == path);
+            AstImpactFile {
+                path,
+                old_path: changed_path.old_path.clone(),
+                is_new: changed_path.is_new,
+                language: parsed.and_then(|file| file.language.clone()),
+                modules: parsed.map(module_names).unwrap_or_default(),
+                references: parsed
+                    .map(|file| file.references.clone())
+                    .unwrap_or_default(),
+                error: parsed.and_then(|file| file.error.clone()),
+            }
+        })
+        .collect();
+    let partial_files = parsed_files
+        .iter()
+        .filter(|file| file.error.is_some())
+        .count();
+    Ok(AstImpactResult {
+        changed_files,
+        impacts: graph_impacts(&changed, &parsed_files),
+        partial_files,
+    })
 }
 
 pub fn plan_policy(config: &Config, risk: crate::domain::RiskLevel) -> PlannedPolicy {

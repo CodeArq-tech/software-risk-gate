@@ -109,3 +109,15 @@ O dry-run não executa validações, não consulta aprovações e não cria nem
 atualiza comentários. Uma análise válida retorna sucesso independentemente de
 a política planejada ser bloqueadora; falhas de configuração, API, AST ou diff
 retornam erro.
+
+## RF-11 — Impacto AST sem configuração
+
+O CLI deve aceitar --ast-impact com --repository, --pull-number, --token e
+--root sem exigir .risk-gate.yaml. O modo deve consultar os arquivos do PR,
+montar a AST dos arquivos disponíveis no checkout, identificar módulos e
+referências e retornar as cadeias de dependência que conectam cada arquivo
+alterado a outros módulos.
+
+O resultado deve ser JSON e informar arquivos alterados, linguagem, módulos,
+referências, erros parciais e impactos ordenados. O modo não calcula risco,
+não seleciona gateRules, não executa validações e não publica comentários.

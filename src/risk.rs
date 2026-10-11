@@ -1,5 +1,13 @@
 use crate::config::{NewCodePolicy, RiskRule, normalize_path};
 use crate::domain::{AstNode, ChangedPath, ParsedFile, RiskLevel};
+use std::collections::BTreeSet;
+
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
+pub struct GraphImpact {
+    pub changed_path: String,
+    pub affected_path: String,
+    pub path: Vec<String>,
+}
 
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 pub struct RiskEvidence {
@@ -109,6 +117,37 @@ pub fn assess_risk_with_impact(
     }
 }
 
+pub fn graph_impacts(changed: &[ChangedPath], files: &[ParsedFile]) -> Vec<GraphImpact> {
+    let graph = dependency_graph(files);
+    let mut impacts = Vec::new();
+    for changed_path in changed {
+        let normalized = normalize_path(&changed_path.path)
+            .unwrap_or_else(|_| changed_path.path.replace('\\', "/"));
+        for (affected_path, path) in graph_paths(&normalized, &graph) {
+            impacts.push(GraphImpact {
+                changed_path: normalized.clone(),
+                affected_path,
+                path,
+            });
+        }
+    }
+    impacts.sort_by(|left, right| {
+        (&left.changed_path, &left.affected_path, &left.path).cmp(&(
+            &right.changed_path,
+            &right.affected_path,
+            &right.path,
+        ))
+    });
+    impacts
+}
+
+pub fn module_names(file: &ParsedFile) -> Vec<String> {
+    file.root
+        .as_ref()
+        .map(collect_module_names)
+        .unwrap_or_default()
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct DependencyEdge {
     from: String,
@@ -144,7 +183,23 @@ fn resolve_reference(source: &str, reference: &str, files: &[ParsedFile]) -> Opt
     let normalized = reference.replace('\\', "/");
     let base = if normalized.starts_with('.') {
         let mut parent = source_parent.split('/').collect::<Vec<_>>();
-        for part in normalized.split('/') {
+        let mut relative = normalized.as_str();
+        if relative == ".." {
+            parent.pop();
+            relative = "";
+        } else {
+            while let Some(stripped) = relative.strip_prefix("../") {
+                parent.pop();
+                relative = stripped;
+            }
+            while let Some(stripped) = relative.strip_prefix("./") {
+                relative = stripped;
+            }
+            if relative.starts_with('.') {
+                relative = relative.trim_start_matches('.');
+            }
+        }
+        for part in relative.split(['/', '.']) {
             match part {
                 "." | "" => {}
                 ".." => {
@@ -229,6 +284,32 @@ fn impact_paths<'a>(
             {
                 result.push((neighbor.clone(), rule, next_path.clone()));
             }
+            queue.push((neighbor, next_path));
+        }
+    }
+    result
+}
+
+fn graph_paths(changed: &str, graph: &[DependencyEdge]) -> Vec<(String, Vec<String>)> {
+    let mut queue = vec![(changed.to_owned(), vec![changed.to_owned()])];
+    let mut visited = BTreeSet::from([changed.to_owned()]);
+    let mut result = Vec::new();
+    while let Some((current, path)) = queue.pop() {
+        for neighbor in graph.iter().filter_map(|edge| {
+            if edge.from == current {
+                Some(edge.to.clone())
+            } else if edge.to == current {
+                Some(edge.from.clone())
+            } else {
+                None
+            }
+        }) {
+            if !visited.insert(neighbor.clone()) {
+                continue;
+            }
+            let mut next_path = path.clone();
+            next_path.push(neighbor.clone());
+            result.push((neighbor.clone(), next_path.clone()));
             queue.push((neighbor, next_path));
         }
     }

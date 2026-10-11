@@ -27,6 +27,16 @@ O dry-run consulta os arquivos do PR e retorna JSON com o risco, a análise de
 impacto e a política de gateRules selecionada pela Action. Ele não executa
 validações, não consulta aprovações e não publica comentários.
 
+Quando o repositório ainda não possui configuração, use o modo ast-impact
+para analisar somente AST e dependências:
+
+    cargo run -- --ast-impact --root /path/to/condominio \
+      --repository Lar21/condominio --pull-number 31554 \
+      --token "$GITHUB_TOKEN"
+
+Esse modo não exige .risk-gate.yaml e retorna os arquivos alterados, módulos
+identificados, referências e as cadeias de módulos afetados.
+
 For the public configuration contract, see
 [`specs/configuration.md`](specs/configuration.md). For implementation order,
 see [`docs/implementation-plan.md`](docs/implementation-plan.md). Quality gates

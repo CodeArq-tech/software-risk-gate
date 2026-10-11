@@ -205,3 +205,51 @@ fn cli_dry_run_returns_selected_policy_without_side_effects() {
     assert!(!directory.path().join("should-not-run").exists());
     files.assert();
 }
+
+#[test]
+fn cli_ast_impact_works_without_risk_configuration() {
+    let mut server = mockito::Server::new();
+    let files = server
+        .mock("GET", "/repos/o/r/pulls/8/files?per_page=100&page=1")
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(r#"[{"filename":"src/main.py","status":"modified"}]"#)
+        .create();
+    let directory = tempdir().unwrap();
+    fs::create_dir_all(directory.path().join("src/payment")).unwrap();
+    fs::write(
+        directory.path().join("src/main.py"),
+        "from .payment.core import authorize\n",
+    )
+    .unwrap();
+    fs::write(
+        directory.path().join("src/payment/core.py"),
+        "def authorize():\n    return True\n",
+    )
+    .unwrap();
+
+    let output = binary()
+        .args([
+            "--ast-impact",
+            "--root",
+            ".",
+            "--token",
+            "token",
+            "--repository",
+            "o/r",
+            "--pull-number",
+            "8",
+            "--api-url",
+            &server.url(),
+        ])
+        .current_dir(directory.path())
+        .assert()
+        .success();
+    output
+        .stdout(predicate::str::contains("\"mode\": \"ast-impact\""))
+        .stdout(predicate::str::contains("\"changedFiles\""))
+        .stdout(predicate::str::contains("\"authorize\""))
+        .stdout(predicate::str::contains("\".payment.core\""))
+        .stdout(predicate::str::contains("src/payment/core.py"));
+    files.assert();
+}

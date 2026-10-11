@@ -58,10 +58,6 @@ impl SupportedLanguage {
 
 pub fn parse_file(root: &Path, path: &Path) -> Result<ParsedFile, AstError> {
     let absolute = root.join(path);
-    let source = fs::read_to_string(&absolute).map_err(|source| AstError::Read {
-        path: absolute,
-        source,
-    })?;
     let Some(language) = SupportedLanguage::from_path(path) else {
         return Ok(ParsedFile {
             path: path.to_string_lossy().replace('\\', "/"),
@@ -71,6 +67,10 @@ pub fn parse_file(root: &Path, path: &Path) -> Result<ParsedFile, AstError> {
             references: Vec::new(),
         });
     };
+    let source = fs::read_to_string(&absolute).map_err(|source| AstError::Read {
+        path: absolute,
+        source,
+    })?;
     let mut parser = Parser::new();
     parser
         .set_language(&language.language())

@@ -1,7 +1,9 @@
 use clap::Parser;
 use risk_gate::config::Config;
 use risk_gate::diff::GitDiffProvider;
-use risk_gate::engine::{analyze, analyze_risk_only, analyze_with_approval, plan_policy};
+use risk_gate::engine::{
+    analyze, analyze_ast_impact, analyze_risk_only, analyze_with_approval, plan_policy,
+};
 use risk_gate::gates::ShellExecutor;
 use risk_gate::github::GithubApi;
 use risk_gate::telemetry;
@@ -34,6 +36,12 @@ struct Cli {
         help = "Analyze a pull request without comments, approvals, or validations"
     )]
     dry_run: bool,
+    #[arg(
+        long,
+        conflicts_with = "dry_run",
+        help = "Show AST changes and dependency impact without requiring configuration"
+    )]
+    ast_impact: bool,
 }
 
 fn main() {
@@ -42,6 +50,12 @@ fn main() {
         "analysis_started",
         &[("config", cli.config.display().to_string())],
     );
+    if cli.ast_impact {
+        if let Err(error) = run_ast_impact(&cli) {
+            fail(error, 3);
+        }
+        return;
+    }
     match Config::load(&cli.config) {
         Ok(config) => {
             if cli.dry_run {
@@ -82,6 +96,37 @@ fn main() {
             std::process::exit(2);
         }
     }
+}
+
+fn run_ast_impact(cli: &Cli) -> Result<(), String> {
+    let repository = cli
+        .repository
+        .clone()
+        .ok_or("--repository is required with --ast-impact")?;
+    let token = cli
+        .token
+        .clone()
+        .ok_or("--token or GITHUB_TOKEN is required with --ast-impact")?;
+    let pull_number = cli
+        .pull_number
+        .ok_or("--pull-number is required with --ast-impact")?;
+    let mut api =
+        GithubApi::new(&token, &repository, pull_number).map_err(|error| error.to_string())?;
+    if let Some(api_url) = &cli.api_url {
+        api = api.with_base_url(api_url);
+    }
+    let result = analyze_ast_impact(&cli.root, &api).map_err(|error| error.to_string())?;
+    let output = AstImpactOutput {
+        mode: "ast-impact",
+        repository,
+        pull_number,
+        result,
+    };
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&output).map_err(|error| error.to_string())?
+    );
+    Ok(())
 }
 
 fn run_dry_run(cli: &Cli, config: &Config) -> Result<(), String> {
@@ -212,4 +257,13 @@ struct DryRunOutput {
     #[serde(rename = "partialFiles")]
     partial_files: usize,
     policy: risk_gate::engine::PlannedPolicy,
+}
+
+#[derive(Debug, serde::Serialize)]
+struct AstImpactOutput {
+    mode: &'static str,
+    repository: String,
+    #[serde(rename = "pullNumber")]
+    pull_number: u64,
+    result: risk_gate::engine::AstImpactResult,
 }

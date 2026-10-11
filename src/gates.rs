@@ -322,7 +322,7 @@ mod tests {
             .execute(
                 "timeout",
                 &ValidationConfig::Detailed {
-                    command: "sleep 1".into(),
+                    command: "sleep 2".into(),
                     timeout_seconds: Some(1),
                 },
             )
