@@ -12,6 +12,17 @@ mapa de risco versionado no próprio repositório.
 4. Execute localmente em modo offline para conferir o risco e o relatório.
 5. Use a execução no PR para validar o caminho GitHub completo.
 
+Para começar com um arquivo válido e permissivo, execute:
+
+```bash
+cargo run -- init
+```
+
+O comando aceita `--root`, `--output` e `--force`. O arquivo gerado documenta
+os valores válidos na própria linha de configuração; seu `riskMap` inicial
+usa `path: ./`, `minimal` e `newCodePolicy: include`, enquanto todos os
+`instantMerge` começam como `true`.
+
 Exemplo mínimo:
 
 ```yaml

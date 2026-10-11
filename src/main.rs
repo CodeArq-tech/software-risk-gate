@@ -45,6 +45,13 @@ struct Cli {
 }
 
 fn main() {
+    if is_init_command() {
+        let cli = InitCli::parse_from(init_arguments());
+        if let Err(error) = run_init(&cli) {
+            fail(error, 2);
+        }
+        return;
+    }
     let cli = Cli::parse();
     let _ = telemetry::event(
         "analysis_started",
@@ -96,6 +103,94 @@ fn main() {
             std::process::exit(2);
         }
     }
+}
+
+fn is_init_command() -> bool {
+    env::args().nth(1).as_deref() == Some("init")
+}
+
+fn init_arguments() -> Vec<String> {
+    let mut args = vec!["risk-gate init".to_owned()];
+    args.extend(env::args().skip(2));
+    args
+}
+
+#[derive(Debug, Parser)]
+#[command(
+    name = "risk-gate init",
+    about = "Create a permissive risk-gate configuration"
+)]
+struct InitCli {
+    #[arg(long, default_value = ".", help = "Repository directory")]
+    root: PathBuf,
+    #[arg(
+        long,
+        default_value = ".risk-gate.yaml",
+        help = "Configuration file path, relative to --root"
+    )]
+    output: PathBuf,
+    #[arg(long, help = "Replace an existing configuration file")]
+    force: bool,
+}
+
+fn run_init(cli: &InitCli) -> Result<(), String> {
+    let output = cli.root.join(&cli.output);
+    if output.exists() && !cli.force {
+        return Err(format!(
+            "{} already exists; use --force to replace it",
+            output.display()
+        ));
+    }
+    if let Some(parent) = output.parent() {
+        fs::create_dir_all(parent).map_err(|error| error.to_string())?;
+    }
+    fs::write(&output, default_config_template()).map_err(|error| error.to_string())?;
+    println!("created {}", output.display());
+    Ok(())
+}
+
+fn default_config_template() -> &'static str {
+    r#"# Risk Gate configuration (version 1)
+# The generated values are intentionally permissive: every risk level allows an
+# instant merge, and no validation or approval is required until you customize it.
+version: 1
+
+riskMap:
+  - path: ./                         # path: repository-relative path; ./ matches the whole repository
+    risk: minimal                    # minimal | low | normal | high | danger (higher wins)
+    description: "Default repository rule" # text shown in the pull-request report
+    newCodePolicy: include           # include | ignore; ignore isolated, additive new code
+
+gateRules:
+  minimal:
+    instantMerge: true               # true | false; true reports the risk without blocking the merge
+  low:
+    instantMerge: true               # true | false; validations below still run when configured
+  normal:
+    instantMerge: true               # true | false; set false to block when gates fail
+  high:
+    instantMerge: true               # true | false; optionally add requireApprovalGroup
+  danger:
+    instantMerge: true               # true | false; optionally add validations and approval
+    # requireApprovalGroup: architects # name from approvalGroups; requires team/users approval
+    # validations: [e2e, mutationTesting] # every listed validation must return success
+
+validations:
+  # e2e:
+  #   command: "./scripts/e2e.sh"    # shell command executed from the repository root
+  #   timeoutSeconds: 1800            # positive timeout in seconds
+  # mutationTesting: "./scripts/mutation.sh" # shorthand command form
+
+approvalGroups:
+  # architects:
+  #   team: architects                # GitHub team slug, or use users below
+  #   users: [alice, bob]              # GitHub login names; one approval is enough
+
+limits:
+  maxFiles: 10000                     # positive AST file limit
+  maxAstNodes: 1000000                # positive AST node limit
+  maxCommentBytes: 60000              # maximum report/comment size in bytes
+"#
 }
 
 fn run_ast_impact(cli: &Cli) -> Result<(), String> {

@@ -9,6 +9,39 @@ fn binary() -> Command {
 }
 
 #[test]
+fn cli_init_creates_permissive_commented_config() {
+    let directory = tempdir().unwrap();
+    binary()
+        .args(["init", "--root"])
+        .arg(directory.path())
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("created"));
+    let path = directory.path().join(".risk-gate.yaml");
+    let contents = fs::read_to_string(&path).unwrap();
+    assert!(contents.contains("path: ./"));
+    assert!(contents.contains("minimal | low | normal | high | danger"));
+    assert!(contents.contains("instantMerge: true"));
+    assert!(contents.contains("newCodePolicy: include"));
+    assert!(risk_gate::config::Config::load(path).is_ok());
+}
+
+#[test]
+fn cli_init_does_not_overwrite_without_force() {
+    let directory = tempdir().unwrap();
+    let path = directory.path().join(".risk-gate.yaml");
+    fs::write(&path, "keep").unwrap();
+    binary()
+        .args(["init", "--root"])
+        .arg(directory.path())
+        .assert()
+        .failure()
+        .code(2)
+        .stderr(predicate::str::contains("--force"));
+    assert_eq!(fs::read_to_string(path).unwrap(), "keep");
+}
+
+#[test]
 fn cli_loads_configuration_without_diff_context() {
     let directory = tempdir().unwrap();
     fs::write(

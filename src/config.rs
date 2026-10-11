@@ -266,7 +266,7 @@ pub fn normalize_path(path: &str) -> Result<String, ConfigError> {
         }
     }
     if parts.is_empty() {
-        return Err(ConfigError::EscapingPath(path));
+        return Ok("./".to_owned());
     }
     let result = parts.join("/");
     Ok(if is_dir { format!("{result}/") } else { result })
@@ -355,6 +355,7 @@ riskMap:
             normalize_path("../secrets"),
             Err(ConfigError::EscapingPath(_))
         ));
+        assert_eq!(normalize_path("./").unwrap(), "./");
     }
 
     #[test]

@@ -318,6 +318,9 @@ fn graph_paths(changed: &str, graph: &[DependencyEdge]) -> Vec<(String, Vec<Stri
 
 fn matches_path(path: &str, rule: &str) -> bool {
     let normalized_rule = rule.replace('\\', "/");
+    if normalized_rule == "./" {
+        return true;
+    }
     if normalized_rule.ends_with('/') {
         path.starts_with(&normalized_rule)
     } else {

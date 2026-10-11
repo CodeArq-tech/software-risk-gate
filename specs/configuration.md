@@ -51,6 +51,12 @@ limits:
 
 ## Forma mínima
 
+O comando `risk-gate init` gera uma forma mínima permissiva para edição. A
+regra `path: ./` representa a raiz inteira do repositório; ela pode ser
+substituída por regras mais específicas. A configuração gerada mantém
+`instantMerge: true` em todos os níveis e não define validações nem grupos de
+aprovação.
+
 `riskMap` é obrigatório e não pode ser vazio. Cada item contém `path`, `risk`
 e pode conter `description` e `newCodePolicy`. Os níveis válidos são exatamente
 `minimal`, `low`, `normal`, `high` e `danger`.

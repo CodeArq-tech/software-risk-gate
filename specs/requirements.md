@@ -121,3 +121,13 @@ alterado a outros módulos.
 O resultado deve ser JSON e informar arquivos alterados, linguagem, módulos,
 referências, erros parciais e impactos ordenados. O modo não calcula risco,
 não seleciona gateRules, não executa validações e não publica comentários.
+
+## RF-12 — Inicialização da configuração
+
+O CLI deve aceitar o comando `init` e criar `.risk-gate.yaml` no diretório do
+repositório. A configuração inicial deve ser válida, conter comentários sobre
+os valores permitidos e usar uma política permissiva: `path: ./`, risco
+`minimal`, `newCodePolicy: include`, nenhum comando de validação ou aprovação e
+`instantMerge: true` para todos os níveis. O comando deve aceitar `--root`,
+`--output` e `--force`; sem `--force`, não pode sobrescrever um arquivo
+existente.

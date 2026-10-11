@@ -13,6 +13,18 @@ the path risk; connected code always remains in the risk calculation.
 
 ## Local analysis
 
+Para criar uma configuração inicial permissiva, com comentários explicando
+as opções disponíveis:
+
+```bash
+cargo run -- init
+```
+
+O comando cria `.risk-gate.yaml`, usa `path: ./` com risco `minimal` e deixa
+`instantMerge: true` em todos os níveis. Use `--force` para substituir um
+arquivo existente; depois ajuste o mapa, gates, validações e aprovações ao
+risco real do repositório.
+
 ```bash
 cargo run -- --config .risk-gate.yaml --root . --base "$BASE_SHA" --head "$HEAD_SHA"
 ```
