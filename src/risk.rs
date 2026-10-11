@@ -613,6 +613,37 @@ mod tests {
                 to: "src/b.py".into()
             }]
         );
+        assert!(
+            !dependency_graph(&files)
+                .iter()
+                .any(|edge| edge.from == edge.to)
+        );
+    }
+
+    #[test]
+    fn graph_paths_follow_edges_in_both_directions_without_revisiting_nodes() {
+        let graph = vec![
+            DependencyEdge {
+                from: "src/a.py".into(),
+                to: "src/b.py".into(),
+            },
+            DependencyEdge {
+                from: "src/b.py".into(),
+                to: "src/c.py".into(),
+            },
+        ];
+        let paths = graph_paths("src/b.py", &graph);
+        assert!(
+            paths
+                .iter()
+                .any(|(path, chain)| { path == "src/a.py" && chain == &["src/b.py", "src/a.py"] })
+        );
+        assert!(
+            paths
+                .iter()
+                .any(|(path, chain)| { path == "src/c.py" && chain == &["src/b.py", "src/c.py"] })
+        );
+        assert_eq!(paths.len(), 2);
     }
 
     #[test]

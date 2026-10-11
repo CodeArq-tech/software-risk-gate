@@ -371,6 +371,24 @@ mod tests {
     }
 
     #[test]
+    fn preserves_elixir_alias_names_in_the_ast() {
+        let directory = tempdir().unwrap();
+        fs::write(
+            directory.path().join("alias.ex"),
+            "defmodule App do\n  alias MyApp.Payment\nend\n",
+        )
+        .unwrap();
+        let parsed = parse_file(directory.path(), Path::new("alias.ex")).unwrap();
+
+        fn has_name(node: &AstNode, expected: &str) -> bool {
+            node.name.as_deref() == Some(expected)
+                || node.children.iter().any(|child| has_name(child, expected))
+        }
+
+        assert!(has_name(parsed.root.as_ref().unwrap(), "MyApp.Payment"));
+    }
+
+    #[test]
     fn extracts_dependency_references_from_supported_import_forms() {
         let directory = tempdir().unwrap();
         fs::write(
@@ -415,6 +433,7 @@ mod tests {
         assert!(references.contains(&"alpha.beta".to_owned()));
         assert!(references.contains(&"gamma.delta".to_owned()));
         assert!(!references.contains(&"as".to_owned()));
+        assert!(!references.contains(&"run".to_owned()));
 
         for kind in ["alias", "import", "require", "use", "call"] {
             let mut values = Vec::new();
