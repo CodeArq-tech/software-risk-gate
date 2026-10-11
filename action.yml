@@ -46,7 +46,7 @@ runs:
       run: |
         set -euo pipefail
         asset="risk-gate-x86_64-unknown-linux-gnu"
-        url="https://github.com/${{ github.action_repository }}/releases/download/${{ inputs.version }}/${asset}"
+        url="https://github.com/CodeArq-tech/software-risk-gate/releases/download/${{ inputs.version }}/${asset}"
         curl --fail --location --retry 3 --output "$RUNNER_TEMP/risk-gate" "$url"
         curl --fail --location --retry 3 --output "$RUNNER_TEMP/risk-gate.sha256" "${url}.sha256"
         (cd "$RUNNER_TEMP" && sha256sum --check risk-gate.sha256)
