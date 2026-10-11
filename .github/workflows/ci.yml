@@ -1,8 +1,8 @@
 name: CI
 
 on:
-  push:
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
 
 permissions:
   contents: read
@@ -12,14 +12,25 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy, llvm-tools-preview
       - uses: taiki-e/install-action@cargo-llvm-cov
       - uses: taiki-e/install-action@cargo-mutants
+      - name: Require branch rebased on master
+        run: |
+          git fetch --no-tags origin master
+          if ! git merge-base --is-ancestor origin/master ${{ github.event.pull_request.head.sha }}; then
+            echo "::error::This pull request must be rebased on the current master before merging."
+            exit 1
+          fi
       - run: cargo fmt --all -- --check
-      - run: cargo clippy --all-targets --all-features -- -D warnings
+      - name: Clippy
+        run: cargo clippy --all-targets --all-features -- -D warnings
       - run: cargo test --all-targets --all-features
-      - run: cargo llvm-cov --workspace --all-features --fail-under-lines 95
+      - run: cargo llvm-cov --workspace --all-features --fail-under-lines 95.01
       - run: cargo mutants --baseline run --copy-target true --minimum-test-timeout 60 --no-shuffle -j 4
       - run: bash scripts/check-mutation-score.sh

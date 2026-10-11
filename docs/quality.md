@@ -23,7 +23,7 @@ killed / (killed + missed + timeout)
 
 `unviable` deve ser investigado e não pode ser contado como mutante morto.
 Sobreviventes (`missed`) exigem teste de regressão ou uma justificativa
-documentada de mutante equivalente. A CI deve falhar abaixo de 95%.
+documentada de mutante equivalente. A CI deve falhar em 95% ou abaixo.
 
 Para diagnóstico opcional, defina `RISK_GATE_LOG=json`. Eventos estruturados
 serão enviados para stderr; tokens, comandos de validação e respostas da API
@@ -35,7 +35,7 @@ restantes estão concentrados em uma condição de parsing de referências, no
 ramo de conversão de nós Tree-sitter, em limites de truncamento, na condição
 de auto-referência do grafo e no wrapper opcional de telemetria. Eles ficam
 registrados pelo artefato do `cargo-mutants`; a CI considera timeouts como
-mutantes não aprovados e falha abaixo de 95%.
+mutantes não aprovados e falha em 95% ou abaixo.
 
 ## Escopo da cobertura
 

@@ -12,4 +12,4 @@ test "$tested" -gt 0
 
 score=$(awk -v caught="$caught" -v tested="$tested" 'BEGIN { printf "%.2f", (caught / tested) * 100 }')
 echo "mutation score: ${score}% (${caught}/${tested}; unviable excluded)"
-awk -v score="$score" 'BEGIN { exit !(score >= 95.0) }'
+awk -v score="$score" 'BEGIN { exit !(score > 95.0) }'

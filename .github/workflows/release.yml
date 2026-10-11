@@ -2,23 +2,78 @@ name: Release
 
 on:
   push:
-    tags:
-      - 'v*.*.*'
+    branches: [master]
+  workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
-  linux:
-    runs-on: ubuntu-latest
+  build:
+    name: Build ${{ matrix.os }} binary
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            binary: risk-gate
+            asset: risk-gate-x86_64-unknown-linux-gnu
+          - os: macos-14
+            target: aarch64-apple-darwin
+            binary: risk-gate
+            asset: risk-gate-aarch64-apple-darwin
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            binary: risk-gate.exe
+            asset: risk-gate-x86_64-pc-windows-msvc.exe
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-      - run: cargo build --release --locked --target x86_64-unknown-linux-gnu
-      - run: cp target/x86_64-unknown-linux-gnu/release/risk-gate risk-gate-x86_64-unknown-linux-gnu
-      - run: sha256sum risk-gate-x86_64-unknown-linux-gnu > risk-gate-x86_64-unknown-linux-gnu.sha256
-      - uses: softprops/action-gh-release@v2
         with:
-          files: |
-            risk-gate-x86_64-unknown-linux-gnu
-            risk-gate-x86_64-unknown-linux-gnu.sha256
+          targets: ${{ matrix.target }}
+      - name: Build
+        run: cargo build --release --locked --target ${{ matrix.target }}
+      - name: Prepare Unix asset
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          cp "target/${{ matrix.target }}/release/${{ matrix.binary }}" "${{ matrix.asset }}"
+          shasum -a 256 "${{ matrix.asset }}" > "${{ matrix.asset }}.sha256"
+      - name: Prepare Windows asset
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Copy-Item "target/${{ matrix.target }}/release/${{ matrix.binary }}" "${{ matrix.asset }}"
+          (Get-FileHash "${{ matrix.asset }}" -Algorithm SHA256).Hash.ToLower() + "  ${{ matrix.asset }}" | Out-File -Encoding ascii "${{ matrix.asset }}.sha256"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.asset }}
+          path: |
+            ${{ matrix.asset }}
+            ${{ matrix.asset }}.sha256
+
+  publish:
+    name: Publish GitHub release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+          pattern: risk-gate-*
+          merge-multiple: true
+      - name: Read version
+        id: version
+        shell: bash
+        run: echo "version=$(sed -n 's/^version = "\([^"]*\)"/\1/p' Cargo.toml | head -1)" >> "$GITHUB_OUTPUT"
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          target_commitish: ${{ github.sha }}
+          name: Risk Gate v${{ steps.version.outputs.version }}
+          generate_release_notes: true
+          files: release-assets/*
