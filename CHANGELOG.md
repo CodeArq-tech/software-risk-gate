@@ -1,10 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.1.0
 
-- Implementa análise AST para Python, JavaScript, TypeScript e Elixir.
-- Adiciona classificação por `riskMap`, gates por risco, validações e aprovações
-  de equipes/usuários do GitHub.
-- Publica relatório idempotente no PR e aplica limites de arquivos, nós AST e
-  tamanho de comentário.
-- Automatiza cobertura mínima de 95%, mutação e checksum do binário de release.
+- Implements AST analysis for Python, JavaScript, TypeScript, and Elixir.
+- Adds riskMap classification, risk-based gates, validations, and GitHub team
+  or user approvals.
+- Publishes an idempotent PR report and applies file, AST-node, and comment
+  size limits.
+- Automates coverage above 95%, mutation testing, and release binary checksums.

@@ -1,133 +1,131 @@
-# Requisitos funcionais
+# Functional Requirements
 
-## RF-01 — Configuração no repositório
+## FR-01 — Repository configuration
 
-Em cada execução, o programa deve procurar `.risk-gate.yaml` na raiz do
-checkout. A ausência do arquivo, YAML inválido, nível desconhecido, regra
-duplicada ambígua ou comando sem nome deve resultar em `FAILED` e exit code
-não zero.
+Every execution must look for .risk-gate.yaml at the checkout root. A missing
+file, invalid YAML, unknown level, ambiguous duplicate rule, or unnamed command
+must result in FAILED and a non-zero exit code.
 
-## RF-02 — AST completa e independente de linguagem
+## FR-02 — Complete language-independent AST
 
-O analisador deve percorrer o projeto inteiro dentro do escopo configurado e
-montar uma representação comum de AST. O nó comum deve conservar, no mínimo,
-linguagem, caminho, tipo do nó, nome qualificado quando disponível, intervalo
-de origem e filhos.
+The analyzer must traverse the entire project within the configured scope and
+build a common AST representation. Each common node must preserve, at minimum,
+language, path, node type, qualified name when available, byte range, and
+children.
 
-A primeira matriz de suporte é Python, JavaScript, TypeScript e Elixir. Parser
-ausente ou erro de parsing deve aparecer no relatório com caminho e motivo.
-Uma árvore parcial não pode ser apresentada como análise completa.
+The first support matrix is Python, JavaScript, TypeScript, and Elixir. A
+missing parser or parse error must appear in the report with path and reason.
+A partial tree must never be presented as complete analysis.
 
-## RF-03 — Mapeamento de módulos
+## FR-03 — Module mapping
 
-Cada entrada de `riskMap` deve ser comparada ao caminho normalizado do arquivo e
-dos módulos descobertos. O mapeamento precisa permitir identificar quais
-módulos vivem sob cada path rule, inclusive quando a alteração é em um arquivo
-de teste, configuração ou infraestrutura sem módulo AST correspondente.
+Each riskMap entry must be compared with normalized file paths and discovered
+modules. Mapping must identify modules under each path rule, including changes
+to tests, configuration, or infrastructure without a corresponding AST module.
 
-O caminho é relativo à raiz do repositório, usa `/` e não começa com `./`.
-Uma regra de diretório termina em `/`; uma regra de arquivo pode ser exata.
+Paths are relative to the repository root, use /, and are normalized. A
+directory rule ends with /; a file rule can be exact. The root rule ./ matches
+the entire repository.
 
-## RF-04 — Risco do Pull Request
+## FR-04 — Pull Request risk
 
-O diff deve ser obtido dos commits do PR, incluindo arquivos adicionados,
-modificados, renomeados e removidos. Para cada arquivo alterado, o sistema
-calcula o maior risco das regras aplicáveis. O risco do PR é o máximo entre
-esses resultados.
+The diff must come from PR commits and include added, modified, renamed, and
+removed files. For each changed file, the system calculates the maximum risk
+of applicable rules. PR risk is the maximum across changed files.
 
-Se nenhum arquivo alterado casar com o mapa, o risco é `normal` (fallback
-seguro). PR sem arquivos alterados é inválido para análise e deve falhar.
+If no changed file matches the map, risk is normal as a safe fallback. A PR
+with no changed files is invalid for analysis and must fail.
 
-### RF-04.1 — Impacto em cascata e código novo isolado
+### FR-04.1 — Cascade impact and isolated new code
 
-O analisador deve construir um grafo de referências entre os arquivos
-suportados. Arestas podem representar imports, requires, aliases ou usos
-equivalentes identificados pelo parser. A busca de impacto considera a cadeia
-transitiva em ambas as direções: código novo que usa uma área crítica e código
-existente que passa a usar código novo são evidências de impacto.
+The analyzer must build a reference graph between files and modules identified
+by the parser. Impact search considers transitive chains in both directions:
+new code using a critical area and existing code that starts using new code are
+both impact evidence.
 
-Uma regra pode declarar `newCodePolicy: ignore`. Essa exceção só se aplica a
-arquivo novo sem caminho no grafo até qualquer regra de risco. Código novo
-conectado conserva o risco aplicável. O relatório deve mostrar os arquivos e a
-cadeia que causaram o risco; código isolado ignorado também deve ser explícito.
+A rule may declare newCodePolicy: ignore. This exception applies only to a new
+file with no graph path to any risk rule. Connected new code keeps its
+applicable risk. The report must show the files and chain that caused risk;
+ignored isolated code must also be explicit.
 
-## RF-05 — Gate rules
+The report must include a Mermaid diagram showing the changed module, affected
+modules, and traversal order.
 
-Depois do risco máximo, o sistema deve selecionar `gateRules[risco]`. Uma regra
-de nível superior não herda automaticamente a regra de níveis inferiores. A
-configuração pode usar `extends` no futuro, mas isso precisa ser especificado
-antes de ser implementado.
+## FR-05 — Risk gates
 
-`instantMerge: true` significa que o resultado do gate não bloqueia o merge e a
-Action termina com sucesso para fins de mergeability. O relatório ainda deve
-mostrar validações falhas ou incompletas, e a execução nunca pode omitir seus
-resultados.
+After maximum risk is calculated, the system selects gateRules for that exact
+level. A higher-level rule does not automatically inherit lower-level rules.
 
-Sem `instantMerge`, qualquer validação exigida que não termine com exit code 0,
-ou que não possa ser executada, faz o gate falhar.
+instantMerge: true means the gate result does not block the merge and the
+Action exits successfully for mergeability. The report must still show failed
+or incomplete validations, and technical status must not be changed to
+SUCCESS.
 
-## RF-06 — Aprovação por grupo
+Without instantMerge, any required validation that does not exit zero or cannot
+be executed must fail the gate.
 
-`requireApprovalGroup` identifica um grupo lógico de aprovação no GitHub. O
-adaptador GitHub deve resolver o grupo para usuários/equipe configurados,
-verificar aprovações válidas no PR e relatar quem aprovou e o que faltou.
-Permissão insuficiente para verificar aprovação é `FAILED`, não aprovação
-implícita. A sintaxe de resolução do grupo deve ser documentada pelo
-adaptador; a primeira versão deve aceitar `org/team` e uma lista de logins.
+## FR-06 — Group approval
 
-## RF-07 — Validações
+requireApprovalGroup identifies a logical GitHub approval group. The GitHub
+adapter must resolve the group to configured users or a team, verify valid PR
+approvals, and report who approved and what is missing.
 
-`validations` referencia comandos nomeados na seção `validations`. Cada comando
-selecionado deve ser executado uma vez, com timeout e saída capturados. Todas
-as validações exigidas devem retornar sucesso para o Risk Gate retornar
-sucesso. O resultado deve incluir nome, comando identificado, duração, exit
-code, estado e trecho de saída seguro para log.
+Insufficient permission to verify approval is FAILED, not implicit approval.
+The first version must accept org/team and a list of logins.
 
-## RF-08 — Relatório no PR
+## FR-07 — Configured validations
 
-Toda análise deve gerar um comentário idempotente no PR contendo:
+validations references named commands in the validations section. Each selected
+command must run once with timeout and output captured. All required
+validations must succeed for Risk Gate to return success. The result must
+include name, identified command, duration, exit code, state, and a safe output
+excerpt.
 
-1. risco final e nível ordenado;
-2. arquivos e módulos que determinaram o maior risco;
-3. descrição configurada nas regras correspondentes;
-4. gates selecionados, aprovações e validações;
-5. limitações, parsers ausentes e estados `PARTIAL`/`FAILED`;
-6. identificador e versão do risk-gate.
+## FR-08 — Idempotent report
 
-O comentário deve ser atualizado quando já existir a marca
-`<!-- risk-gate:report -->`; não deve criar uma nova mensagem a cada execução.
+Every analysis must generate an idempotent PR comment containing:
 
-## RF-10 — Dry-run remoto
+1. final risk and ordered level;
+2. files and modules that determined maximum risk;
+3. path descriptions;
+4. graph impact and Mermaid cascade;
+5. limitations, missing parsers, and PARTIAL or FAILED states;
+6. validation and approval results;
+7. Risk Gate identifier and version.
 
-O CLI deve aceitar --dry-run --repository owner/name --pull-number N --token
-TOKEN para analisar um PR remoto sem alterar o GitHub. O resultado deve ser
-JSON e informar o risco, o assessment de impacto e a política selecionada em
-gateRules, incluindo validações, timeout, grupo de aprovação, instantMerge e
-se uma falha bloquearia o merge.
+When the stable marker <!-- risk-gate:report --> already exists, the comment
+must be updated instead of creating another message.
 
-O dry-run não executa validações, não consulta aprovações e não cria nem
-atualiza comentários. Uma análise válida retorna sucesso independentemente de
-a política planejada ser bloqueadora; falhas de configuração, API, AST ou diff
-retornam erro.
+## FR-09 — Remote dry-run
 
-## RF-11 — Impacto AST sem configuração
+The CLI must accept --dry-run --repository owner/name --pull-number N --token
+TOKEN to analyze a remote PR without changing GitHub. The result must be JSON
+and include risk, impact assessment, and the policy selected from gateRules,
+including validations, timeout, approval group, instantMerge, and whether a
+failure would block the merge.
 
-O CLI deve aceitar --ast-impact com --repository, --pull-number, --token e
---root sem exigir .risk-gate.yaml. O modo deve consultar os arquivos do PR,
-montar a AST dos arquivos disponíveis no checkout, identificar módulos e
-referências e retornar as cadeias de dependência que conectam cada arquivo
-alterado a outros módulos.
+Dry-run does not execute validations, query approvals, or create/update
+comments. A valid analysis returns success regardless of whether the planned
+policy is blocking; configuration, API, AST, or diff failures return an error.
 
-O resultado deve ser JSON e informar arquivos alterados, linguagem, módulos,
-referências, erros parciais e impactos ordenados. O modo não calcula risco,
-não seleciona gateRules, não executa validações e não publica comentários.
+## FR-10 — AST impact without configuration
 
-## RF-12 — Inicialização da configuração
+The CLI must accept --ast-impact with --repository, --pull-number, --token,
+and --root without requiring .risk-gate.yaml. It must query PR files, build
+ASTs from the available checkout, identify modules and references, and return
+dependency chains connecting each changed file to other modules.
 
-O CLI deve aceitar o comando `init` e criar `.risk-gate.yaml` no diretório do
-repositório. A configuração inicial deve ser válida, conter comentários sobre
-os valores permitidos e usar uma política permissiva: `path: ./`, risco
-`minimal`, `newCodePolicy: include`, nenhum comando de validação ou aprovação e
-`instantMerge: true` para todos os níveis. O comando deve aceitar `--root`,
-`--output` e `--force`; sem `--force`, não pode sobrescrever um arquivo
-existente.
+The JSON result must include changed files, language, modules, references,
+partial errors, and ordered impacts. It does not calculate risk, select
+gateRules, execute validations, or publish comments.
+
+## FR-11 — Configuration initialization
+
+The CLI must accept the init command and create .risk-gate.yaml in the
+repository directory. The initial configuration must be valid, contain
+comments describing allowed values, and use a permissive policy: path ./, risk
+minimal, newCodePolicy include, no validation or approval commands, and
+instantMerge true for every level.
+
+The command must accept --root, --output, and --force. Without --force it must
+not overwrite an existing file.

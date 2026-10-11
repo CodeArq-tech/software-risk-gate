@@ -468,7 +468,7 @@ mod tests {
                 assessment: &assessment,
                 gate: None,
                 parsed_files: &[],
-                version: "á",
+                version: "release 🚀",
             },
             20,
         );
@@ -495,8 +495,8 @@ mod tests {
             3,
         );
         assert!(tiny.len() <= 3);
-        assert_eq!(utf8_prefix_len("éclair", 2), 2);
-        assert_eq!(utf8_prefix_len("éclair", 6), 6);
+        assert_eq!(utf8_prefix_len("release 🚀", 9), 8);
+        assert_eq!(utf8_prefix_len("release 🚀", 12), 12);
         assert_eq!(utf8_prefix_len("abc", 10), 3);
     }
 }

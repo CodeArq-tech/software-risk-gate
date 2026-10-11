@@ -1,98 +1,76 @@
-# Risk Gate
+# Risk Gate Documentation
 
-O Risk Gate é uma etapa Rust para GitHub Actions que classifica o risco de um
-Pull Request a partir do código alterado, da AST completa do projeto e de um
-mapa de risco versionado no próprio repositório.
+Risk Gate is a Rust step for GitHub Actions that classifies Pull Request risk
+from changed code, the complete project AST, and a versioned repository risk
+map.
 
-## Início rápido
+## Quick start
 
-1. Crie `.risk-gate.yaml` na raiz seguindo [`specs/configuration.md`](../specs/configuration.md).
-2. Configure a Action com permissão para ler o PR e atualizar comentários.
-3. Defina comandos de validação reproduzíveis no repositório.
-4. Execute localmente em modo offline para conferir o risco e o relatório.
-5. Use a execução no PR para validar o caminho GitHub completo.
+1. Run risk-gate init to create .risk-gate.yaml.
+2. Review the generated permissive configuration.
+3. Configure the Action with permission to read the PR and update comments.
+4. Define reproducible validation commands in the repository.
+5. Run the local offline mode before opening a PR.
+6. Validate the complete GitHub flow on a test PR.
 
-Para começar com um arquivo válido e permissivo, execute:
+Minimal example:
 
-```bash
-cargo run -- init
-```
-
-O comando aceita `--root`, `--output` e `--force`. O arquivo gerado documenta
-os valores válidos na própria linha de configuração; seu `riskMap` inicial
-usa `path: ./`, `minimal` e `newCodePolicy: include`, enquanto todos os
-`instantMerge` começam como `true`.
-
-Exemplo mínimo:
-
-```yaml
+~~~yaml
 version: 1
 riskMap:
   - path: src/payment/
     risk: danger
-    description: "Pagamento"
+    description: "Payment processing"
   - path: tests/
     risk: minimal
-    description: "Testes"
+    description: "Automated tests"
 gateRules:
   danger:
     validations: [e2e]
 validations:
   e2e:
     command: "./scripts/e2e.sh"
-```
+~~~
 
-O risco final é o maior nível encontrado entre os arquivos do diff. O
-comentário do PR explica quais paths e descrições causaram o resultado. Leia as
-especificações para a semântica normativa e os limites da primeira versão.
+The final risk is the highest level found among files in the diff. The PR
+comment explains which paths and descriptions caused the result. When
+newCodePolicy is ignore, the report states whether a new file was isolated or
+connected to a risk area.
 
-Quando `newCodePolicy: ignore` for usado, o comentário também informa se o
-arquivo novo ficou isolado ou se encontrou uma cadeia de imports/requires até
-uma área de risco. Código conectado não é ignorado.
+## Workflow permissions
 
-## Permissões do workflow
+Use the default token with these minimum job permissions:
 
-Use o token padrão com estas permissões mínimas no job que executa a Action:
-
-```yaml
+~~~yaml
 permissions:
   contents: read
   pull-requests: read
   issues: write
-```
+~~~
 
-`pull-requests: read` permite consultar arquivos e reviews. A API de comentários
-usa `issues: write`; sem ela a análise retorna falha de publicação, nunca uma
-aprovação implícita. Para equipes privadas, o token também precisa ter acesso
-à organização correspondente.
+pull-requests: read allows file and review queries. Comment creation and
+updates use issues: write. Without it, publication fails; it must never be
+treated as implicit approval.
 
-O modo local não chama GitHub e é adequado para validar a configuração e o
-relatório antes de abrir um PR:
+## Local modes
 
-```bash
+Offline local analysis:
+
+~~~bash
 cargo run -- --config .risk-gate.yaml --root . --base "$BASE_SHA" --head "$HEAD_SHA"
-```
+~~~
 
-Para analisar um PR remoto sem efeitos colaterais, use:
+Remote read-only policy preview:
 
-    cargo run -- --dry-run --config .risk-gate.yaml --root . \
-      --repository CodeArq-tech/software-risk-gate \
-      --pull-number 123 --token "$GITHUB_TOKEN"
+~~~bash
+cargo run -- --dry-run --config .risk-gate.yaml --root . +  --repository owner/repository --pull-number 123 --token "$GITHUB_TOKEN"
+~~~
 
-Esse comando retorna JSON com risk, assessment e policy. O modo é somente
-leitura: não executa validações, não consulta reviews e não publica comentário.
+AST and dependency analysis without configuration:
 
-Quando não houver .risk-gate.yaml, use o modo ast-impact:
+~~~bash
+cargo run -- --ast-impact --root /path/to/repository +  --repository owner/repository --pull-number 123 --token "$GITHUB_TOKEN"
+~~~
 
-    cargo run -- --ast-impact --root /path/to/condominio \
-      --repository Lar21/condominio --pull-number 31554 \
-      --token "$GITHUB_TOKEN"
-
-Ele retorna JSON com os arquivos alterados, módulos encontrados pela AST,
-referências e as cadeias de dependência afetadas, sem risco ou gates.
-
-Para implementar o produto, siga o [plano de implementação](implementation-plan.md),
-que organiza as tarefas por dependência e critério de aceite.
-
-Os comandos e critérios de cobertura/mutation testing estão em
-[quality.md](quality.md).
+The implementation plan is in implementation-plan.md. Quality commands and
+coverage/mutation requirements are in quality.md.

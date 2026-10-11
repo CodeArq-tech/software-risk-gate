@@ -1,19 +1,17 @@
-# ADR-0001 — Rust e parsers Tree-sitter
+# ADR-0001: Rust Runtime and Tree-sitter
 
-## Decisão
+## Decision
 
-O runtime será Rust. A primeira matriz de linguagens usará as crates oficiais
-de gramática Tree-sitter, atrás de uma interface própria que converte os nós
-para a AST comum do Risk Gate.
+The runtime will be Rust. The first language matrix will use official
+Tree-sitter grammar crates behind a project-owned interface that converts
+language nodes into the common Risk Gate AST.
 
-## Motivo
+## Rationale
 
-Isso mantém um único binário adequado para GitHub Actions, permite parsing
-incremental no futuro e separa a gramática de cada linguagem do domínio de
-risco. O domínio não depende diretamente de tipos específicos de uma gramática.
+This keeps one binary suitable for GitHub Actions, allows incremental parsing
+in the future, and separates each language grammar from the risk domain. The
+domain does not depend directly on grammar-specific types.
 
-## Limites
-
-A existência de uma árvore sintática não significa análise semântica completa.
-Erros de sintaxe, linguagem sem suporte e nós sem nome devem ser reportados com
-estado e evidência no relatório.
+The existence of a syntax tree does not mean complete semantic analysis.
+Syntax errors, unsupported languages, and unnamed nodes must be reported with
+state and evidence in the report.
