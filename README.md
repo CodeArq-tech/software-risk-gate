@@ -27,8 +27,10 @@ For a PR execution, Risk Gate:
 The graph can raise the risk of a change outside a critical path when the
 change depends on, or is depended on by, critical code. The report graph
 prioritizes the highest propagated risk chains, includes available cascade
-paths in risk order, removes duplicates, and bounds the number of nodes so the
-rendered Mermaid diagram remains readable and navigable in the PR. It is
+paths in risk order, removes duplicates, and bounds the graph to five real
+impacted nodes. Additional nodes are represented by a smaller `Outros X` node,
+colored according to the highest omitted risk, so the rendered Mermaid diagram
+remains readable and navigable in the PR. It is
 rendered top-to-bottom, uses wrapped path labels and larger spacing, forces
 black node text, and keeps evidence and gate details collapsed so the graph is
 the visual focus. It reports how many lower-priority chains were omitted.

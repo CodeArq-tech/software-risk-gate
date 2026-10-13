@@ -57,8 +57,12 @@ affected modules, and traversal order. To keep the PR comment readable, the
 diagram must be a bounded summary: it prioritizes the highest risk found among
 graph impacts, then includes the available cascade chains in risk order,
 deduplicates equal chains, and displays the cascade paths from those impacts.
-Lower-priority or duplicate chains may be omitted, but the report must state
-how many were omitted. The diagram must use a
+The diagram must show at most five real impacted nodes, selected by risk and a
+stable path tie-breaker. Any additional nodes must be collapsed into one
+smaller `Outros X` node, where `X` is the number omitted; that aggregate node
+must use the color of the highest risk among its omitted nodes. Lower-priority
+or duplicate chains may be omitted, but the report must state how many were
+omitted. The diagram must use a
 top-to-bottom layout with wrapped labels, readable spacing, and increased
 visual scale. Evidence, AST diagnostics, validations, and approvals should be
 collapsed in HTML details blocks so they do not compete with the graph.

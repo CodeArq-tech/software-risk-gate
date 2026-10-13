@@ -6,6 +6,8 @@ use std::collections::{BTreeMap, BTreeSet};
 pub const REPORT_MARKER: &str = "<!-- risk-gate:report -->";
 const MAX_IMPACT_CHAINS: usize = 24;
 const MAX_IMPACT_NODES: usize = 96;
+const MAX_VISIBLE_IMPACT_NODES: usize = 5;
+const OMITTED_NODES_KEY: &str = "__risk_gate_omitted_nodes__";
 
 #[derive(Debug, Clone)]
 pub struct ReportInput<'a> {
@@ -226,11 +228,6 @@ fn render_impact_mermaid(assessment: &RiskAssessment) -> String {
             break;
         }
     }
-    let ids = nodes
-        .iter()
-        .enumerate()
-        .map(|(index, path)| (path.clone(), format!("impact_{index}")))
-        .collect::<BTreeMap<_, _>>();
     let mut node_risks = BTreeMap::new();
     for impact in &impacts {
         for path in &impact.path {
@@ -240,26 +237,79 @@ fn render_impact_mermaid(assessment: &RiskAssessment) -> String {
                 .or_insert(impact.risk);
         }
     }
+    let mut visible_nodes = nodes.clone();
+    visible_nodes.sort_by(|left, right| {
+        (
+            std::cmp::Reverse(node_risks.get(left).copied().unwrap_or(RiskLevel::Normal)),
+            left,
+        )
+            .cmp(&(
+                std::cmp::Reverse(node_risks.get(right).copied().unwrap_or(RiskLevel::Normal)),
+                right,
+            ))
+    });
+    visible_nodes.truncate(MAX_VISIBLE_IMPACT_NODES);
+    let visible_node_set = visible_nodes.iter().cloned().collect::<BTreeSet<_>>();
+    let omitted_nodes = nodes
+        .iter()
+        .filter(|path| !visible_node_set.contains(*path))
+        .cloned()
+        .collect::<Vec<_>>();
+    let omitted_risk = omitted_nodes
+        .iter()
+        .filter_map(|path| node_risks.get(path).copied())
+        .max();
+    let ids = visible_nodes
+        .iter()
+        .enumerate()
+        .map(|(index, path)| (path.clone(), format!("impact_{index}")))
+        .chain(omitted_risk.map(|_| (OMITTED_NODES_KEY.to_owned(), "impact_other".to_owned())))
+        .collect::<BTreeMap<_, _>>();
     let mut output = String::from(
         "```mermaid\n%%{init: {\"flowchart\": {\"htmlLabels\": true, \"nodeSpacing\": 50, \"rankSpacing\": 90, \"curve\": \"basis\"}, \"themeVariables\": {\"fontSize\": \"16px\", \"primaryTextColor\": \"#000000\", \"secondaryTextColor\": \"#000000\", \"tertiaryTextColor\": \"#000000\", \"lineColor\": \"#374151\", \"edgeLabelBackground\": \"#ffffff\"}}}%%\nflowchart TD\n",
     );
-    for path in &nodes {
+    for path in &visible_nodes {
         let id = &ids[path];
         output.push_str(&format!("    {id}[\"{}\"]\n", escape_mermaid_label(path)));
+    }
+    if let Some(risk) = omitted_risk {
+        let id = &ids[OMITTED_NODES_KEY];
+        output.push_str(&format!("    {id}[\"Outros {}\"]\n", omitted_nodes.len()));
     }
     output.push_str(
         "    classDef risk_minimal fill:#dcfce7,stroke:#15803d,color:#000000,stroke-width:2px\n    classDef risk_low fill:#dbeafe,stroke:#1d4ed8,color:#000000,stroke-width:2px\n    classDef risk_normal fill:#fef3c7,stroke:#b45309,color:#000000,stroke-width:2px\n    classDef risk_high fill:#fed7aa,stroke:#c2410c,color:#000000,stroke-width:2px\n    classDef risk_danger fill:#fecaca,stroke:#b91c1c,color:#000000,stroke-width:3px\n",
     );
-    for path in &nodes {
+    for path in &visible_nodes {
         if let Some(id) = ids.get(path) {
             let class = risk_class(node_risks.get(path).copied().unwrap_or(RiskLevel::Normal));
             output.push_str(&format!("    class {id} {class}\n"));
         }
     }
+    if let Some(risk) = omitted_risk {
+        let id = &ids[OMITTED_NODES_KEY];
+        output.push_str(&format!("    class {id} {}\n", risk_class(risk)));
+        output.push_str("    style impact_other font-size:12px,padding:4px\n");
+    }
     let mut edges = BTreeSet::new();
     for impact in &impacts {
         for (step, pair) in impact.path.windows(2).enumerate() {
-            if let (Some(from), Some(to)) = (ids.get(&pair[0]), ids.get(&pair[1]))
+            let from_path = if visible_node_set.contains(&pair[0]) {
+                Some(&pair[0])
+            } else if omitted_risk.is_some() {
+                Some(&OMITTED_NODES_KEY.to_owned())
+            } else {
+                None
+            };
+            let to_path = if visible_node_set.contains(&pair[1]) {
+                Some(&pair[1])
+            } else if omitted_risk.is_some() {
+                Some(&OMITTED_NODES_KEY.to_owned())
+            } else {
+                None
+            };
+            if let (Some(from_path), Some(to_path)) = (from_path, to_path)
+                && let (Some(from), Some(to)) = (ids.get(from_path), ids.get(to_path))
+                && from != to
                 && edges.insert((from.clone(), to.clone()))
             {
                 output.push_str(&format!("    {from} -->|\"step {}\"| {to}\n", step + 1));
@@ -600,6 +650,33 @@ mod tests {
         let isolated_mermaid = render_impact_mermaid(&isolated_impact_assessment);
         assert!(isolated_mermaid.contains("impact_0[\"src<br/>only.py\"]"));
         assert!(!isolated_mermaid.contains("-->"));
+
+        let compact_impact_assessment = RiskAssessment {
+            risk: RiskLevel::Danger,
+            evidence: vec![],
+            impact: vec![crate::risk::ImpactEvidence {
+                changed_path: "src/changed.py".into(),
+                related_path: "src/module6.py".into(),
+                risk: RiskLevel::Danger,
+                rule: "src/".into(),
+                description: None,
+                path: vec![
+                    "src/changed.py".into(),
+                    "src/module1.py".into(),
+                    "src/module2.py".into(),
+                    "src/module3.py".into(),
+                    "src/module4.py".into(),
+                    "src/module5.py".into(),
+                    "src/module6.py".into(),
+                ],
+            }],
+        };
+        let compact_mermaid = render_impact_mermaid(&compact_impact_assessment);
+        assert_eq!(compact_mermaid.matches("[\"").count(), 6);
+        assert!(compact_mermaid.contains("Outros 2"));
+        assert!(compact_mermaid.contains("class impact_other risk_danger"));
+        assert!(compact_mermaid.contains("style impact_other font-size:12px,padding:4px"));
+        assert!(!compact_mermaid.contains("src/module6.py\"]"));
 
         let isolated_report = render_markdown(&ReportInput {
             assessment: &isolated_impact_assessment,
