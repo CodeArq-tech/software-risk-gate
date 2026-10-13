@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.7
+
+- Restores additional bounded cascade nodes by ordering all impact chains with
+  the highest risk first instead of discarding lower-risk paths.
+- Forces black Mermaid node and edge text and uses visible colored markers in
+  the external risk legend.
+
 ## 0.1.6
 
 - Moves the risk legend outside the Mermaid impact graph so the diagram stays

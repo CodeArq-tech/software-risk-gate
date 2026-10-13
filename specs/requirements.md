@@ -54,16 +54,17 @@ ignored isolated code must also be explicit.
 
 The report must include a navigable Mermaid diagram showing the changed module,
 affected modules, and traversal order. To keep the PR comment readable, the
-diagram must be a bounded summary: it selects only the highest risk found
-among graph impacts, deduplicates equal chains, and displays the cascade
-paths from those impacts. Lower-priority or duplicate chains may be omitted,
-but the report must state how many were omitted. The diagram must use a
+diagram must be a bounded summary: it prioritizes the highest risk found among
+graph impacts, then includes the available cascade chains in risk order,
+deduplicates equal chains, and displays the cascade paths from those impacts.
+Lower-priority or duplicate chains may be omitted, but the report must state
+how many were omitted. The diagram must use a
 top-to-bottom layout with wrapped labels, readable spacing, and increased
 visual scale. Evidence, AST diagnostics, validations, and approvals should be
 collapsed in HTML details blocks so they do not compete with the graph.
 The risk legend must be rendered as compact colored text immediately above the
-Mermaid block, outside the diagram; it must not add legend nodes or edges to the
-Mermaid graph.
+Mermaid block, outside the diagram, using visible colored markers and black
+labels; it must not add legend nodes or edges to the Mermaid graph.
 
 ## FR-05 — Risk gates
 

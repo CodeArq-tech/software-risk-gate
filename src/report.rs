@@ -241,14 +241,14 @@ fn render_impact_mermaid(assessment: &RiskAssessment) -> String {
         }
     }
     let mut output = String::from(
-        "```mermaid\n%%{init: {\"flowchart\": {\"htmlLabels\": true, \"nodeSpacing\": 50, \"rankSpacing\": 90, \"curve\": \"basis\"}, \"themeVariables\": {\"fontSize\": \"16px\"}}}%%\nflowchart TD\n",
+        "```mermaid\n%%{init: {\"flowchart\": {\"htmlLabels\": true, \"nodeSpacing\": 50, \"rankSpacing\": 90, \"curve\": \"basis\"}, \"themeVariables\": {\"fontSize\": \"16px\", \"primaryTextColor\": \"#000000\", \"secondaryTextColor\": \"#000000\", \"tertiaryTextColor\": \"#000000\", \"lineColor\": \"#374151\", \"edgeLabelBackground\": \"#ffffff\"}}}%%\nflowchart TD\n",
     );
     for path in &nodes {
         let id = &ids[path];
         output.push_str(&format!("    {id}[\"{}\"]\n", escape_mermaid_label(path)));
     }
     output.push_str(
-        "    classDef risk_minimal fill:#dcfce7,stroke:#15803d,stroke-width:2px\n    classDef risk_low fill:#dbeafe,stroke:#1d4ed8,stroke-width:2px\n    classDef risk_normal fill:#fef3c7,stroke:#b45309,stroke-width:2px\n    classDef risk_high fill:#fed7aa,stroke:#c2410c,stroke-width:2px\n    classDef risk_danger fill:#fecaca,stroke:#b91c1c,stroke-width:3px\n",
+        "    classDef risk_minimal fill:#dcfce7,stroke:#15803d,color:#000000,stroke-width:2px\n    classDef risk_low fill:#dbeafe,stroke:#1d4ed8,color:#000000,stroke-width:2px\n    classDef risk_normal fill:#fef3c7,stroke:#b45309,color:#000000,stroke-width:2px\n    classDef risk_high fill:#fed7aa,stroke:#c2410c,color:#000000,stroke-width:2px\n    classDef risk_danger fill:#fecaca,stroke:#b91c1c,color:#000000,stroke-width:3px\n",
     );
     for path in &nodes {
         if let Some(id) = ids.get(path) {
@@ -271,12 +271,7 @@ fn render_impact_mermaid(assessment: &RiskAssessment) -> String {
 }
 
 fn render_risk_legend() -> String {
-    "**Risk legend:** <span style=\"color:#15803d\">● minimal</span> · \
-<span style=\"color:#1d4ed8\">● low</span> · \
-<span style=\"color:#b45309\">● normal</span> · \
-<span style=\"color:#c2410c\">● high</span> · \
-<span style=\"color:#b91c1c\">● danger</span>\n\n"
-        .to_owned()
+    "**Risk legend:** 🟩 minimal · 🟦 low · 🟨 normal · 🟧 high · 🟥 danger\n\n".to_owned()
 }
 
 fn risk_class(risk: RiskLevel) -> &'static str {
@@ -293,19 +288,17 @@ fn summarize_impacts(
     assessment: &RiskAssessment,
 ) -> Option<(crate::domain::RiskLevel, Vec<&ImpactEvidence>, usize)> {
     let highest_risk = assessment.impact.iter().map(|impact| impact.risk).max()?;
-    let mut candidates = assessment
-        .impact
-        .iter()
-        .filter(|impact| impact.risk == highest_risk)
-        .collect::<Vec<_>>();
+    let mut candidates = assessment.impact.iter().collect::<Vec<_>>();
     candidates.sort_by(|left, right| {
         (
+            std::cmp::Reverse(left.risk),
             &left.path,
             &left.changed_path,
             &left.related_path,
             &left.rule,
         )
             .cmp(&(
+                std::cmp::Reverse(right.risk),
                 &right.path,
                 &right.changed_path,
                 &right.related_path,
@@ -545,9 +538,12 @@ mod tests {
         assert!(impact_report.contains("```mermaid"));
         assert!(impact_report.contains("flowchart TD"));
         assert!(impact_report.contains("nodeSpacing"));
+        assert!(impact_report.contains("primaryTextColor"));
         assert!(impact_report.contains("classDef risk_danger"));
         assert!(impact_report.contains("Risk legend"));
-        assert!(impact_report.contains("<span style=\"color:#b91c1c\">● danger</span>"));
+        assert!(impact_report.contains("🟥 danger"));
+        assert!(impact_report.contains("color:#000000"));
+        assert!(!impact_report.contains("<span style="));
         assert!(!impact_report.contains("subgraph risk_legend"));
         assert!(impact_report.contains("impact_0[\"src<br/>new.py\"]"));
         assert!(impact_report.contains("step 1"));
@@ -587,7 +583,7 @@ mod tests {
         });
         assert!(summarized_report.contains("Highest propagated risk: `danger`"));
         assert!(summarized_report.contains("infra/database"));
-        assert!(!summarized_report.contains("tests/isolated.py"));
+        assert!(summarized_report.contains("tests/isolated.py"));
 
         let isolated_impact_assessment = RiskAssessment {
             risk: RiskLevel::Normal,
