@@ -61,6 +61,9 @@ but the report must state how many were omitted. The diagram must use a
 top-to-bottom layout with wrapped labels, readable spacing, and increased
 visual scale. Evidence, AST diagnostics, validations, and approvals should be
 collapsed in HTML details blocks so they do not compete with the graph.
+The risk legend must be rendered as compact colored text immediately above the
+Mermaid block, outside the diagram; it must not add legend nodes or edges to the
+Mermaid graph.
 
 ## FR-05 — Risk gates
 
