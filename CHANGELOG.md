@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.9
+
+- Limits the Mermaid cascade graph to the five most critical impacted nodes.
+- Collapses remaining nodes into a smaller, risk-colored `Outros X` node.
+
 ## 0.1.8
 
 - Propagates mapped risk through downstream modules in the connected dependency
