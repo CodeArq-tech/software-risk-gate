@@ -7,7 +7,7 @@ use crate::gates::{
 };
 use crate::report::{ReportInput, render_markdown_limited};
 use crate::risk::{
-    GraphImpact, RiskAssessment, assess_risk_with_impact, graph_impacts, module_names,
+    GraphImpact, RiskAssessment, assess_risk_with_impact_and_ignores, graph_impacts, module_names,
 };
 use serde::Serialize;
 use thiserror::Error;
@@ -162,7 +162,12 @@ pub fn analyze_risk_only<D: DiffProvider>(
     }
     let parsed_files =
         parse_project_with_limits(root, config.limits.max_files, config.limits.max_ast_nodes)?;
-    let assessment = assess_risk_with_impact(&config.risk_map, &changed, &parsed_files);
+    let assessment = assess_risk_with_impact_and_ignores(
+        &config.risk_map,
+        &config.ignore_paths,
+        &changed,
+        &parsed_files,
+    );
     Ok(RiskOnlyResult {
         changed,
         parsed_files,
@@ -257,6 +262,7 @@ mod tests {
                 description: Some("payments".into()),
                 new_code_policy: Default::default(),
             }],
+            ignore_paths: vec![],
             gate_rules: BTreeMap::from([(
                 RiskLevel::Danger,
                 GateRule {
@@ -298,6 +304,7 @@ mod tests {
                 description: None,
                 new_code_policy: Default::default(),
             }],
+            ignore_paths: vec![],
             gate_rules: BTreeMap::new(),
             validations: BTreeMap::new(),
             approval_groups: BTreeMap::new(),
@@ -318,6 +325,7 @@ mod tests {
         let config = Config {
             version: 1,
             risk_map: vec![rule_for_test("src/", RiskLevel::High)],
+            ignore_paths: vec![],
             gate_rules: BTreeMap::from([(
                 RiskLevel::High,
                 GateRule {

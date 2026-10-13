@@ -126,6 +126,10 @@ riskMap:
     description: "Runtime instructions"
     newCodePolicy: ignore
 
+ignorePaths:
+  - generated/
+  - tests/                         # optional: exclude a path from risk and graph analysis
+
 gateRules:
   minimal:
     instantMerge: true

@@ -27,6 +27,10 @@ Paths are relative to the repository root, use /, and are normalized. A
 directory rule ends with /; a file rule can be exact. The root rule ./ matches
 the entire repository.
 
+An optional ignorePaths list uses the same normalized path rules. Ignored paths
+must be excluded from risk evidence and dependency-graph traversal, while
+remaining available for technical parsing diagnostics.
+
 ## FR-04 — Pull Request risk
 
 The diff must come from PR commits and include added, modified, renamed, and

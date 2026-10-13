@@ -20,6 +20,8 @@ pub enum ConfigError {
     EmptyRiskMap,
     #[error("riskMap contains duplicate path: {0}")]
     DuplicatePath(String),
+    #[error("ignorePaths contains duplicate path: {0}")]
+    DuplicateIgnorePath(String),
     #[error("riskMap path cannot escape the repository: {0}")]
     EscapingPath(String),
     #[error("validation '{0}' is referenced but not defined")]
@@ -50,6 +52,8 @@ pub struct Config {
     pub version: u8,
     #[serde(rename = "riskMap")]
     pub risk_map: Vec<RiskRule>,
+    #[serde(rename = "ignorePaths", default)]
+    pub ignore_paths: Vec<String>,
     #[serde(rename = "gateRules", default)]
     pub gate_rules: BTreeMap<RiskLevel, GateRule>,
     #[serde(default)]
@@ -227,6 +231,13 @@ impl Config {
                 return Err(ConfigError::DuplicatePath(rule.path.clone()));
             }
         }
+        let mut ignored_paths = BTreeSet::new();
+        for path in &self.ignore_paths {
+            let normalized = normalize_path(path)?;
+            if !ignored_paths.insert(normalized) {
+                return Err(ConfigError::DuplicateIgnorePath(path.clone()));
+            }
+        }
         for gate in self.gate_rules.values() {
             for validation in &gate.validations {
                 let Some(definition) = self.validations.get(validation) else {
@@ -272,6 +283,18 @@ pub fn normalize_path(path: &str) -> Result<String, ConfigError> {
     Ok(if is_dir { format!("{result}/") } else { result })
 }
 
+pub fn path_matches_rule(path: &str, rule: &str) -> bool {
+    let normalized_rule = rule.replace('\\', "/");
+    if normalized_rule == "./" {
+        return true;
+    }
+    if normalized_rule.ends_with('/') {
+        path.starts_with(&normalized_rule)
+    } else {
+        path == normalized_rule || path.starts_with(&(normalized_rule + "/"))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -287,6 +310,8 @@ riskMap:
     description: Payments
     newCodePolicy: ignore
   - tests/: minimal
+ignorePaths:
+  - generated/
 gateRules:
   danger:
     instantMerge: false
@@ -316,6 +341,7 @@ approvalGroups:
         assert_eq!(config.risk_map[0].risk, RiskLevel::Danger);
         assert_eq!(config.risk_map[1].path, "tests/");
         assert_eq!(config.risk_map[0].new_code_policy, NewCodePolicy::Ignore);
+        assert_eq!(config.ignore_paths, vec!["generated/"]);
         assert_eq!(config.validations["e2e"].timeout_seconds(), 60);
         assert_eq!(config.limits.max_files, 10_000);
     }
@@ -350,6 +376,17 @@ riskMap:
         assert!(matches!(
             load_yaml(duplicate),
             Err(ConfigError::DuplicatePath(_))
+        ));
+        let duplicate_ignore = r#"
+version: 1
+riskMap:
+  - path: src/
+    risk: low
+ignorePaths: [generated/, generated/]
+"#;
+        assert!(matches!(
+            load_yaml(duplicate_ignore),
+            Err(ConfigError::DuplicateIgnorePath(_))
         ));
         assert!(matches!(
             normalize_path("../secrets"),

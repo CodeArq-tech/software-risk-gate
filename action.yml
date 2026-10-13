@@ -17,7 +17,7 @@ inputs:
   version:
     description: Released risk-gate version to download
     required: false
-    default: v0.1.4
+    default: v0.1.5
 outputs:
   risk:
     description: Final risk level

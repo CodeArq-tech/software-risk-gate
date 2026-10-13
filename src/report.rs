@@ -1,4 +1,4 @@
-use crate::domain::{AnalysisStatus, ParsedFile};
+use crate::domain::{AnalysisStatus, ParsedFile, RiskLevel};
 use crate::gates::GateResult;
 use crate::risk::{ImpactEvidence, RiskAssessment};
 use std::collections::{BTreeMap, BTreeSet};
@@ -230,6 +230,15 @@ fn render_impact_mermaid(assessment: &RiskAssessment) -> String {
         .enumerate()
         .map(|(index, path)| (path.clone(), format!("impact_{index}")))
         .collect::<BTreeMap<_, _>>();
+    let mut node_risks = BTreeMap::new();
+    for impact in &impacts {
+        for path in &impact.path {
+            node_risks
+                .entry(path.clone())
+                .and_modify(|risk: &mut RiskLevel| *risk = (*risk).max(impact.risk))
+                .or_insert(impact.risk);
+        }
+    }
     let mut output = String::from(
         "```mermaid\n%%{init: {\"flowchart\": {\"htmlLabels\": true, \"nodeSpacing\": 50, \"rankSpacing\": 90, \"curve\": \"basis\"}, \"themeVariables\": {\"fontSize\": \"16px\"}}}%%\nflowchart TD\n",
     );
@@ -237,20 +246,12 @@ fn render_impact_mermaid(assessment: &RiskAssessment) -> String {
         let id = &ids[path];
         output.push_str(&format!("    {id}[\"{}\"]\n", escape_mermaid_label(path)));
     }
-    let primary_nodes = impacts
-        .iter()
-        .map(|impact| impact.changed_path.as_str())
-        .collect::<BTreeSet<_>>();
     output.push_str(
-        "    classDef primary fill:#fee2e2,stroke:#b91c1c,stroke-width:2px\n    classDef cascade fill:#fff7ed,stroke:#c2410c\n",
+        "    classDef risk_minimal fill:#dcfce7,stroke:#15803d,stroke-width:2px\n    classDef risk_low fill:#dbeafe,stroke:#1d4ed8,stroke-width:2px\n    classDef risk_normal fill:#fef3c7,stroke:#b45309,stroke-width:2px\n    classDef risk_high fill:#fed7aa,stroke:#c2410c,stroke-width:2px\n    classDef risk_danger fill:#fecaca,stroke:#b91c1c,stroke-width:3px\n",
     );
     for path in &nodes {
         if let Some(id) = ids.get(path) {
-            let class = if primary_nodes.contains(path.as_str()) {
-                "primary"
-            } else {
-                "cascade"
-            };
+            let class = risk_class(node_risks.get(path).copied().unwrap_or(RiskLevel::Normal));
             output.push_str(&format!("    class {id} {class}\n"));
         }
     }
@@ -264,8 +265,21 @@ fn render_impact_mermaid(assessment: &RiskAssessment) -> String {
             }
         }
     }
+    output.push_str(
+        "    subgraph risk_legend[\"Risk legend\"]\n        legend_minimal[\"minimal\"]\n        legend_low[\"low\"]\n        legend_normal[\"normal\"]\n        legend_high[\"high\"]\n        legend_danger[\"danger\"]\n        class legend_minimal risk_minimal\n        class legend_low risk_low\n        class legend_normal risk_normal\n        class legend_high risk_high\n        class legend_danger risk_danger\n    end\n",
+    );
     output.push_str("```\n\n");
     output
+}
+
+fn risk_class(risk: RiskLevel) -> &'static str {
+    match risk {
+        RiskLevel::Minimal => "risk_minimal",
+        RiskLevel::Low => "risk_low",
+        RiskLevel::Normal => "risk_normal",
+        RiskLevel::High => "risk_high",
+        RiskLevel::Danger => "risk_danger",
+    }
 }
 
 fn summarize_impacts(
@@ -524,6 +538,8 @@ mod tests {
         assert!(impact_report.contains("```mermaid"));
         assert!(impact_report.contains("flowchart TD"));
         assert!(impact_report.contains("nodeSpacing"));
+        assert!(impact_report.contains("classDef risk_danger"));
+        assert!(impact_report.contains("Risk legend"));
         assert!(impact_report.contains("impact_0[\"src<br/>new.py\"]"));
         assert!(impact_report.contains("step 1"));
         assert!(impact_report.contains("<details>"));
