@@ -28,7 +28,9 @@ The graph can raise the risk of a change outside a critical path when the
 change depends on, or is depended on by, critical code. The report graph keeps
 only the highest propagated risk chains, removes duplicates, and bounds the
 number of nodes so the rendered Mermaid diagram remains readable and
-navigable in the PR. It reports how many lower-priority chains were omitted.
+navigable in the PR. It is rendered top-to-bottom, uses wrapped path labels and
+larger spacing, and keeps evidence and gate details collapsed so the graph is
+the visual focus. It reports how many lower-priority chains were omitted.
 A new file can use
 newCodePolicy: ignore when it is isolated; any direct or transitive connection
 keeps it in the risk calculation.

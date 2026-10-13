@@ -1303,7 +1303,7 @@ dependencies = [
 
 [[package]]
 name = "risk-gate"
-version = "0.1.3"
+version = "0.1.4"
 dependencies = [
  "assert_cmd",
  "clap",
