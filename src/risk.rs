@@ -1,4 +1,4 @@
-use crate::config::{NewCodePolicy, RiskRule, normalize_path};
+use crate::config::{NewCodePolicy, RiskRule, normalize_path, path_matches_rule};
 use crate::domain::{AstNode, ChangedPath, ParsedFile, RiskLevel};
 use std::collections::BTreeSet;
 
@@ -49,7 +49,25 @@ pub fn assess_risk_with_impact(
     changed: &[ChangedPath],
     files: &[ParsedFile],
 ) -> RiskAssessment {
-    let graph = dependency_graph(files);
+    assess_risk_with_impact_and_ignores(rules, &[], changed, files)
+}
+
+pub fn assess_risk_with_impact_and_ignores(
+    rules: &[RiskRule],
+    ignore_paths: &[String],
+    changed: &[ChangedPath],
+    files: &[ParsedFile],
+) -> RiskAssessment {
+    let changed = changed
+        .iter()
+        .filter(|changed_path| !is_ignored_path(&changed_path.path, ignore_paths))
+        .collect::<Vec<_>>();
+    let files = files
+        .iter()
+        .filter(|file| !is_ignored_path(&file.path, ignore_paths))
+        .cloned()
+        .collect::<Vec<_>>();
+    let graph = dependency_graph(&files);
     let mut evidence = Vec::new();
     let mut impact = Vec::new();
     for changed_path in changed {
@@ -115,6 +133,13 @@ pub fn assess_risk_with_impact(
         evidence,
         impact,
     }
+}
+
+fn is_ignored_path(path: &str, ignore_paths: &[String]) -> bool {
+    let normalized = normalize_path(path).unwrap_or_else(|_| path.replace('\\', "/"));
+    ignore_paths
+        .iter()
+        .any(|rule| path_matches_rule(&normalized, rule))
 }
 
 pub fn graph_impacts(changed: &[ChangedPath], files: &[ParsedFile]) -> Vec<GraphImpact> {
@@ -317,15 +342,7 @@ fn graph_paths(changed: &str, graph: &[DependencyEdge]) -> Vec<(String, Vec<Stri
 }
 
 fn matches_path(path: &str, rule: &str) -> bool {
-    let normalized_rule = rule.replace('\\', "/");
-    if normalized_rule == "./" {
-        return true;
-    }
-    if normalized_rule.ends_with('/') {
-        path.starts_with(&normalized_rule)
-    } else {
-        path == normalized_rule || path.starts_with(&(normalized_rule + "/"))
-    }
+    path_matches_rule(path, rule)
 }
 
 fn collect_module_names(node: &AstNode) -> Vec<String> {
@@ -514,6 +531,39 @@ mod tests {
         );
         assert_eq!(result.risk, RiskLevel::Minimal);
         assert!(result.evidence[0].ignored_isolated_new_code);
+        assert!(result.impact.is_empty());
+    }
+
+    #[test]
+    fn excludes_configured_paths_from_risk_and_graph_analysis() {
+        let files = vec![
+            ParsedFile {
+                path: "src/payment/core.py".into(),
+                language: Some("python".into()),
+                root: None,
+                error: None,
+                references: vec![],
+            },
+            ParsedFile {
+                path: "tests/payment_test.py".into(),
+                language: Some("python".into()),
+                root: None,
+                error: None,
+                references: vec!["src.payment.core".into()],
+            },
+        ];
+        let result = assess_risk_with_impact_and_ignores(
+            &[rule("src/payment/", RiskLevel::Danger)],
+            &["tests/".into()],
+            &[ChangedPath {
+                path: "tests/payment_test.py".into(),
+                old_path: None,
+                is_new: false,
+            }],
+            &files,
+        );
+        assert_eq!(result.risk, RiskLevel::Normal);
+        assert!(result.evidence.is_empty());
         assert!(result.impact.is_empty());
     }
 

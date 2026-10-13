@@ -66,6 +66,12 @@ only when there is no dependency link to another file belonging to any rule.
 When a direct or transitive link exists, the rule risk applies and the chain
 appears in the PR report.
 
+ignorePaths is an optional list of repository-relative path prefixes excluded
+from risk evidence and dependency-graph traversal. It is useful for generated
+files or test trees that should not change merge risk. Directory entries end in
+`/`; paths are normalized and must not escape the repository. Ignored files
+may still be parsed and reported as technical AST input.
+
 gateRules may contain any risk level. Valid fields are:
 
 - instantMerge: boolean;

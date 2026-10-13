@@ -161,6 +161,10 @@ riskMap:
     description: "Default repository rule" # text shown in the pull-request report
     newCodePolicy: include           # include | ignore; ignore isolated, additive new code
 
+ignorePaths:                         # optional paths excluded from risk and graph analysis
+  # - tests/                          # directory prefix; ignored files are not risk evidence
+  # - generated/                      # use / and repository-relative paths
+
 gateRules:
   minimal:
     instantMerge: true               # true | false; true reports the risk without blocking the merge

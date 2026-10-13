@@ -237,6 +237,7 @@ mod tests {
                 description: None,
                 new_code_policy: Default::default(),
             }],
+            ignore_paths: vec![],
             gate_rules,
             validations: BTreeMap::new(),
             approval_groups: BTreeMap::<String, ApprovalGroup>::new(),
