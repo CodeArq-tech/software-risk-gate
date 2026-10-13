@@ -53,7 +53,10 @@ affected modules, and traversal order. To keep the PR comment readable, the
 diagram must be a bounded summary: it selects only the highest risk found
 among graph impacts, deduplicates equal chains, and displays the cascade
 paths from those impacts. Lower-priority or duplicate chains may be omitted,
-but the report must state how many were omitted.
+but the report must state how many were omitted. The diagram must use a
+top-to-bottom layout with wrapped labels, readable spacing, and increased
+visual scale. Evidence, AST diagnostics, validations, and approvals should be
+collapsed in HTML details blocks so they do not compete with the graph.
 
 ## FR-05 — Risk gates
 
