@@ -1,6 +1,6 @@
 [package]
 name = "risk-gate"
-version = "0.1.7"
+version = "0.1.8"
 edition = "2024"
 description = "Risk analysis and merge gates for GitHub pull requests"
 license = "MIT"

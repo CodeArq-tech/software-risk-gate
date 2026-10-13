@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.8
+
+- Propagates mapped risk through downstream modules in the connected dependency
+  component so cascade effects remain visible in the bounded graph.
+- Caps propagated evidence at 256 impacts to keep analysis resources bounded.
+
 ## 0.1.7
 
 - Restores additional bounded cascade nodes by ordering all impact chains with

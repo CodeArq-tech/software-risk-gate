@@ -86,7 +86,7 @@ pub fn assess_risk_with_impact_and_ignores(
                 Some(selected) if rule.risk > selected.risk => Some(rule),
                 Some(selected) => Some(selected),
             });
-            let impacted = impact_paths(&normalized, rules, &graph);
+            let impacted = impact_paths(&normalized, rules, &graph, selected.copied());
             let isolated_new_code = changed_path.is_new
                 && selected.is_some_and(|rule| rule.new_code_policy == NewCodePolicy::Ignore)
                 && impacted.is_empty();
@@ -283,11 +283,16 @@ fn impact_paths<'a>(
     changed: &str,
     rules: &'a [RiskRule],
     graph: &[DependencyEdge],
+    initial_rule: Option<&'a RiskRule>,
 ) -> Vec<(String, &'a RiskRule, Vec<String>)> {
-    let mut queue = vec![(changed.to_owned(), vec![changed.to_owned()])];
+    const MAX_PROPAGATED_IMPACTS: usize = 256;
+    let mut queue = vec![(changed.to_owned(), vec![changed.to_owned()], initial_rule)];
     let mut visited = std::collections::BTreeSet::from([changed.to_owned()]);
     let mut result = Vec::new();
-    while let Some((current, path)) = queue.pop() {
+    while let Some((current, path, inherited_rule)) = queue.pop() {
+        if result.len() >= MAX_PROPAGATED_IMPACTS {
+            break;
+        }
         for neighbor in graph.iter().filter_map(|edge| {
             if edge.from == current {
                 Some(edge.to.clone())
@@ -302,14 +307,18 @@ fn impact_paths<'a>(
             }
             let mut next_path = path.clone();
             next_path.push(neighbor.clone());
-            if let Some(rule) = rules
+            let rule = rules
                 .iter()
                 .filter(|rule| matches_path(&neighbor, &rule.path))
                 .max_by_key(|rule| rule.risk)
-            {
+                .or(inherited_rule);
+            if let Some(rule) = rule {
                 result.push((neighbor.clone(), rule, next_path.clone()));
             }
-            queue.push((neighbor, next_path));
+            queue.push((neighbor, next_path, rule));
+            if result.len() >= MAX_PROPAGATED_IMPACTS {
+                break;
+            }
         }
     }
     result
@@ -636,6 +645,60 @@ mod tests {
         );
         assert_eq!(result.risk, RiskLevel::Danger);
         assert_eq!(result.impact[0].rule, "src/payment/");
+    }
+
+    #[test]
+    fn propagates_critical_risk_to_downstream_cascade_modules() {
+        let files = vec![
+            ParsedFile {
+                path: "src/payment/core.py".into(),
+                language: Some("python".into()),
+                root: None,
+                error: None,
+                references: vec!["../billing/invoice".into()],
+            },
+            ParsedFile {
+                path: "src/billing/invoice.py".into(),
+                language: Some("python".into()),
+                root: None,
+                error: None,
+                references: vec!["../reporting/export".into()],
+            },
+            ParsedFile {
+                path: "src/reporting/export.py".into(),
+                language: Some("python".into()),
+                root: None,
+                error: None,
+                references: vec![],
+            },
+            ParsedFile {
+                path: "src/new.py".into(),
+                language: Some("python".into()),
+                root: None,
+                error: None,
+                references: vec!["./payment/core".into()],
+            },
+        ];
+        let result = assess_risk_with_impact(
+            &[rule("src/payment/", RiskLevel::Danger)],
+            &[ChangedPath {
+                path: "src/new.py".into(),
+                old_path: None,
+                is_new: false,
+            }],
+            &files,
+        );
+
+        assert!(result.impact.iter().any(|impact| {
+            impact.related_path == "src/reporting/export.py"
+                && impact.path
+                    == [
+                        "src/new.py",
+                        "src/payment/core.py",
+                        "src/billing/invoice.py",
+                        "src/reporting/export.py",
+                    ]
+        }));
     }
 
     #[test]
