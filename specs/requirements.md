@@ -48,8 +48,12 @@ file with no graph path to any risk rule. Connected new code keeps its
 applicable risk. The report must show the files and chain that caused risk;
 ignored isolated code must also be explicit.
 
-The report must include a Mermaid diagram showing the changed module, affected
-modules, and traversal order.
+The report must include a navigable Mermaid diagram showing the changed module,
+affected modules, and traversal order. To keep the PR comment readable, the
+diagram must be a bounded summary: it selects only the highest risk found
+among graph impacts, deduplicates equal chains, and displays the cascade
+paths from those impacts. Lower-priority or duplicate chains may be omitted,
+but the report must state how many were omitted.
 
 ## FR-05 — Risk gates
 
@@ -88,7 +92,7 @@ Every analysis must generate an idempotent PR comment containing:
 1. final risk and ordered level;
 2. files and modules that determined maximum risk;
 3. path descriptions;
-4. graph impact and Mermaid cascade;
+4. a bounded, highest-risk graph impact summary and navigable Mermaid cascade;
 5. limitations, missing parsers, and PARTIAL or FAILED states;
 6. validation and approval results;
 7. Risk Gate identifier and version.
