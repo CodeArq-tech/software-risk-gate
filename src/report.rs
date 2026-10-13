@@ -122,6 +122,7 @@ pub fn render_markdown_limited(input: &ReportInput<'_>, max_bytes: usize) -> Str
             output.push('\n');
         }
         output.push_str("</details>\n\n");
+        output.push_str(&render_risk_legend());
         output.push_str(&render_impact_mermaid(input.assessment));
     }
     output.push_str("<details>\n<summary>Technical details</summary>\n\n");
@@ -265,11 +266,17 @@ fn render_impact_mermaid(assessment: &RiskAssessment) -> String {
             }
         }
     }
-    output.push_str(
-        "    subgraph risk_legend[\"Risk legend\"]\n        legend_minimal[\"minimal\"]\n        legend_low[\"low\"]\n        legend_normal[\"normal\"]\n        legend_high[\"high\"]\n        legend_danger[\"danger\"]\n        class legend_minimal risk_minimal\n        class legend_low risk_low\n        class legend_normal risk_normal\n        class legend_high risk_high\n        class legend_danger risk_danger\n    end\n",
-    );
     output.push_str("```\n\n");
     output
+}
+
+fn render_risk_legend() -> String {
+    "**Risk legend:** <span style=\"color:#15803d\">● minimal</span> · \
+<span style=\"color:#1d4ed8\">● low</span> · \
+<span style=\"color:#b45309\">● normal</span> · \
+<span style=\"color:#c2410c\">● high</span> · \
+<span style=\"color:#b91c1c\">● danger</span>\n\n"
+        .to_owned()
 }
 
 fn risk_class(risk: RiskLevel) -> &'static str {
@@ -540,6 +547,8 @@ mod tests {
         assert!(impact_report.contains("nodeSpacing"));
         assert!(impact_report.contains("classDef risk_danger"));
         assert!(impact_report.contains("Risk legend"));
+        assert!(impact_report.contains("<span style=\"color:#b91c1c\">● danger</span>"));
+        assert!(!impact_report.contains("subgraph risk_legend"));
         assert!(impact_report.contains("impact_0[\"src<br/>new.py\"]"));
         assert!(impact_report.contains("step 1"));
         assert!(impact_report.contains("<details>"));

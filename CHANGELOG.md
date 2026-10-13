@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.6
+
+- Moves the risk legend outside the Mermaid impact graph so the diagram stays
+  focused on module relationships.
+- Keeps risk colors in the report legend and preserves colored nodes in the
+  graph.
+
 ## 0.1.0
 
 - Implements AST analysis for Python, JavaScript, TypeScript, and Elixir.
