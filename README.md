@@ -21,10 +21,15 @@ For a PR execution, Risk Gate:
 6. Traverses the dependency graph for direct and transitive impact.
 7. Selects the highest applicable risk.
 8. Runs validations and checks configured approvals for that risk.
-9. Creates or updates one PR comment with evidence and a Mermaid cascade graph.
+9. Creates or updates one compact PR comment with evidence and a Mermaid
+   cascade graph.
 
 The graph can raise the risk of a change outside a critical path when the
-change depends on, or is depended on by, critical code. A new file can use
+change depends on, or is depended on by, critical code. The report graph keeps
+only the highest propagated risk chains, removes duplicates, and bounds the
+number of nodes so the rendered Mermaid diagram remains readable and
+navigable in the PR. It reports how many lower-priority chains were omitted.
+A new file can use
 newCodePolicy: ignore when it is isolated; any direct or transitive connection
 keeps it in the risk calculation.
 

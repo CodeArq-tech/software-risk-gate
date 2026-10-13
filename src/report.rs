@@ -1,9 +1,11 @@
 use crate::domain::{AnalysisStatus, ParsedFile};
 use crate::gates::GateResult;
-use crate::risk::RiskAssessment;
+use crate::risk::{ImpactEvidence, RiskAssessment};
 use std::collections::{BTreeMap, BTreeSet};
 
 pub const REPORT_MARKER: &str = "<!-- risk-gate:report -->";
+const MAX_IMPACT_CHAINS: usize = 24;
+const MAX_IMPACT_NODES: usize = 96;
 
 #[derive(Debug, Clone)]
 pub struct ReportInput<'a> {
@@ -81,9 +83,17 @@ pub fn render_markdown_limited(input: &ReportInput<'_>, max_bytes: usize) -> Str
         }
         output.push('\n');
     }
-    if !input.assessment.impact.is_empty() {
-        output.push_str("### Cascade impact\n\n");
-        for impact in &input.assessment.impact {
+    if let Some((highest_risk, impacts, omitted)) = summarize_impacts(input.assessment) {
+        output.push_str("### Cascade impact summary\n\n");
+        output.push_str(&format!(
+            "The graph shows only the highest propagated risk (`{highest_risk}`) and its cascade chains.\n\n"
+        ));
+        if omitted > 0 {
+            output.push_str(&format!(
+                "`{omitted}` lower-priority or duplicate impact chain(s) were omitted to keep this comment readable.\n\n"
+            ));
+        }
+        for impact in impacts {
             output.push_str(&format!(
                 "- `{}` is connected to `{}` → **{}** (rule `{}`)",
                 escape_code(&impact.changed_path),
@@ -192,12 +202,21 @@ pub fn render_markdown_limited(input: &ReportInput<'_>, max_bytes: usize) -> Str
 }
 
 fn render_impact_mermaid(assessment: &RiskAssessment) -> String {
+    let Some((_, impacts, _)) = summarize_impacts(assessment) else {
+        return String::new();
+    };
     let mut nodes = Vec::new();
-    for impact in &assessment.impact {
+    for impact in &impacts {
         for path in &impact.path {
+            if nodes.len() == MAX_IMPACT_NODES {
+                break;
+            }
             if !nodes.iter().any(|known: &String| known == path) {
                 nodes.push(path.clone());
             }
+        }
+        if nodes.len() == MAX_IMPACT_NODES {
+            break;
         }
     }
     let ids = nodes
@@ -210,8 +229,25 @@ fn render_impact_mermaid(assessment: &RiskAssessment) -> String {
         let id = &ids[path];
         output.push_str(&format!("    {id}[\"{}\"]\n", escape_mermaid_label(path)));
     }
+    let primary_nodes = impacts
+        .iter()
+        .map(|impact| impact.changed_path.as_str())
+        .collect::<BTreeSet<_>>();
+    output.push_str(
+        "    classDef primary fill:#fee2e2,stroke:#b91c1c,stroke-width:2px\n    classDef cascade fill:#fff7ed,stroke:#c2410c\n",
+    );
+    for path in &nodes {
+        if let Some(id) = ids.get(path) {
+            let class = if primary_nodes.contains(path.as_str()) {
+                "primary"
+            } else {
+                "cascade"
+            };
+            output.push_str(&format!("    class {id} {class}\n"));
+        }
+    }
     let mut edges = BTreeSet::new();
-    for impact in &assessment.impact {
+    for impact in &impacts {
         for (step, pair) in impact.path.windows(2).enumerate() {
             if let (Some(from), Some(to)) = (ids.get(&pair[0]), ids.get(&pair[1]))
                 && edges.insert((from.clone(), to.clone()))
@@ -222,6 +258,35 @@ fn render_impact_mermaid(assessment: &RiskAssessment) -> String {
     }
     output.push_str("```\n\n");
     output
+}
+
+fn summarize_impacts(
+    assessment: &RiskAssessment,
+) -> Option<(crate::domain::RiskLevel, Vec<&ImpactEvidence>, usize)> {
+    let highest_risk = assessment.impact.iter().map(|impact| impact.risk).max()?;
+    let mut candidates = assessment
+        .impact
+        .iter()
+        .filter(|impact| impact.risk == highest_risk)
+        .collect::<Vec<_>>();
+    candidates.sort_by(|left, right| {
+        (
+            &left.path,
+            &left.changed_path,
+            &left.related_path,
+            &left.rule,
+        )
+            .cmp(&(
+                &right.path,
+                &right.changed_path,
+                &right.related_path,
+                &right.rule,
+            ))
+    });
+    candidates.dedup_by(|left, right| left.path == right.path);
+    let omitted = candidates.len().saturating_sub(MAX_IMPACT_CHAINS);
+    candidates.truncate(MAX_IMPACT_CHAINS);
+    Some((highest_risk, candidates, omitted))
 }
 
 fn escape_mermaid_label(value: &str) -> String {
@@ -432,12 +497,48 @@ mod tests {
             parsed_files: &[],
             version: "test",
         });
-        assert!(impact_report.contains("### Cascade impact"));
+        assert!(impact_report.contains("### Cascade impact summary"));
         assert!(impact_report.contains("payment/core.py"));
         assert!(impact_report.contains("chain:"));
         assert!(impact_report.contains("```mermaid"));
         assert!(impact_report.contains("impact_0[\"src/new.py\"]"));
         assert!(impact_report.contains("step 1"));
+
+        let summarized_assessment = RiskAssessment {
+            risk: RiskLevel::Danger,
+            evidence: vec![],
+            impact: vec![
+                crate::risk::ImpactEvidence {
+                    changed_path: "src/new.py".into(),
+                    related_path: "tests/isolated.py".into(),
+                    risk: RiskLevel::Minimal,
+                    rule: "tests/".into(),
+                    description: None,
+                    path: vec!["src/new.py".into(), "tests/isolated.py".into()],
+                },
+                crate::risk::ImpactEvidence {
+                    changed_path: "src/new.py".into(),
+                    related_path: "src/payment/core.py".into(),
+                    risk: RiskLevel::Danger,
+                    rule: "src/payment/".into(),
+                    description: None,
+                    path: vec![
+                        "src/new.py".into(),
+                        "src/payment/core.py".into(),
+                        "infra/database".into(),
+                    ],
+                },
+            ],
+        };
+        let summarized_report = render_markdown(&ReportInput {
+            assessment: &summarized_assessment,
+            gate: None,
+            parsed_files: &[],
+            version: "test",
+        });
+        assert!(summarized_report.contains("highest propagated risk (`danger`)"));
+        assert!(summarized_report.contains("infra/database"));
+        assert!(!summarized_report.contains("tests/isolated.py"));
 
         let isolated_impact_assessment = RiskAssessment {
             risk: RiskLevel::Normal,
