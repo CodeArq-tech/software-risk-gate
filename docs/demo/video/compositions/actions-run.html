@@ -1,0 +1,304 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+  </head>
+  <body>
+    <template>
+      <style>
+        #root {
+          position: absolute;
+          inset: 0;
+        }
+        .ar-view {
+          position: absolute;
+          left: 0;
+          right: 0;
+          top: 196px;
+          bottom: 0;
+        }
+        .ar-conv-box {
+          position: absolute;
+          left: 44px;
+          width: 1000px;
+          border: 1px solid var(--border);
+          border-radius: 10px;
+          font-size: 18px;
+        }
+        .ar-conv-box .hd {
+          height: 50px;
+          background: var(--subtle);
+          border-bottom: 1px solid var(--border);
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 0 16px;
+          color: var(--muted);
+          border-radius: 10px 10px 0 0;
+        }
+        .ar-conv-box .bd {
+          padding: 16px;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+        .ar-side {
+          position: absolute;
+          left: 44px;
+          top: 0;
+          width: 340px;
+          font-size: 18px;
+        }
+        .ar-side .wf {
+          font-weight: 600;
+          padding: 10px 12px;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+        .ar-side .job {
+          margin-top: 6px;
+          padding: 10px 12px;
+          border-radius: 8px;
+          background: #eef3f9;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          font-weight: 500;
+        }
+        .ar-side .on {
+          margin: 14px 12px 0;
+          color: var(--muted);
+          font-size: 16px;
+        }
+        .ar-card {
+          position: absolute;
+          left: 404px;
+          right: 44px;
+          top: 0;
+          height: 452px;
+          border-radius: 10px;
+          background: #0d1117;
+          overflow: hidden;
+          color: #e6edf3;
+        }
+        .ar-card-head {
+          height: 52px;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 0 18px;
+          border-bottom: 1px solid #30363d;
+          font-size: 18px;
+          font-weight: 600;
+        }
+        .ar-card-head .sub {
+          color: #8b949e;
+          font-weight: 400;
+          font-size: 16px;
+        }
+        .ar-step {
+          height: 36px;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 0 18px;
+          font-size: 16px;
+          color: #e6edf3;
+        }
+        .ar-step .d {
+          margin-left: auto;
+          color: #8b949e;
+          font-family: var(--mono);
+          font-size: 14px;
+        }
+        .ar-step .ico {
+          width: 18px;
+          height: 18px;
+        }
+        .ar-step.dim {
+          color: #8b949e;
+        }
+        .ar-logvp {
+          position: relative;
+          height: 220px;
+          overflow: hidden;
+          margin: 0 10px;
+          border-radius: 6px;
+          background: #010409;
+        }
+        .ar-loglines {
+          position: absolute;
+          left: 0;
+          right: 0;
+          top: 0;
+          padding: 6px 0;
+        }
+        .ar-spin {
+          animation: none;
+        }
+      </style>
+      <div id="root" data-composition-id="actions-run" data-width="1920" data-height="1080">
+        <div class="rg-stage" id="actions-run-stage">
+          <div class="rg-cam" id="actions-run-cam">
+            <div class="win" id="actions-run-win">
+              <div class="gh-page" id="actions-run-page">
+                <div class="ar-view" id="actions-run-conv">
+                  <div class="ar-conv-box" style="top: 0">
+                    <div class="hd"><div class="gh-avatar av-dana" style="width: 30px; height: 30px; font-size: 13px">D</div><b style="color: var(--fg)">dana</b> commented now</div>
+                    <div class="bd">Replace the manual loop with reduce.</div>
+                  </div>
+                  <div class="ar-conv-box" style="top: 150px">
+                    <div class="bd" id="actions-run-pending"></div>
+                  </div>
+                </div>
+                <div class="ar-view" id="actions-run-checks">
+                  <div class="ar-side">
+                    <div class="wf" id="actions-run-wf"></div>
+                    <div class="job" id="actions-run-job"></div>
+                    <div class="on">on: pull_request</div>
+                  </div>
+                  <div class="ar-card" id="actions-run-card">
+                    <div class="ar-card-head">risk-gate <span class="sub" id="actions-run-sub">started now</span></div>
+                    <div class="ar-step" id="actions-run-s1"></div>
+                    <div class="ar-step" id="actions-run-s2"></div>
+                    <div class="ar-step" id="actions-run-s3"></div>
+                    <div class="ar-logvp" id="actions-run-vp">
+                      <div class="ar-loglines log" id="actions-run-lines"></div>
+                    </div>
+                    <div class="ar-step dim" id="actions-run-s4"></div>
+                    <div class="ar-step dim" id="actions-run-s5"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="rg-focus" id="actions-run-focus"></div>
+          </div>
+        </div>
+      </div>
+      <script>
+        (function () {
+          RG.mount("actions-run", 9, function () {
+            const stage = document.getElementById("actions-run-stage");
+            const cam = document.getElementById("actions-run-cam");
+            const win = document.getElementById("actions-run-win");
+            const page = document.getElementById("actions-run-page");
+            RG.chrome(win, { path: "/acme/storefront/pull/42/checks", tab: "Pull requests", prs: "3" });
+            const head = RG.prHeader(page, { tab: "Conversation" });
+            const tabConv = head.querySelector('[data-tab="Conversation"]');
+            const tabChecks = head.querySelector('[data-tab="Checks"]');
+            const conv = document.getElementById("actions-run-conv");
+            const checks = document.getElementById("actions-run-checks");
+            document.getElementById("actions-run-pending").innerHTML =
+              RG.icon("pending") + "<b>Some checks haven’t completed yet</b><span style='color:var(--muted)'>1 in progress check</span>";
+            document.getElementById("actions-run-wf").innerHTML = RG.icon("play") + "Risk Gate";
+            const job = document.getElementById("actions-run-job");
+            const sub = document.getElementById("actions-run-sub");
+            const s1 = document.getElementById("actions-run-s1");
+            const s2 = document.getElementById("actions-run-s2");
+            const s3 = document.getElementById("actions-run-s3");
+            s1.innerHTML = RG.icon("check") + "Set up job<span class='d'>2s</span>";
+            s2.innerHTML = RG.icon("check") + "Run actions/checkout@v4<span class='d'>1s</span>";
+            document.getElementById("actions-run-s4").innerHTML = RG.icon("skip") + "Post Run actions/checkout@v4";
+            document.getElementById("actions-run-s5").innerHTML = RG.icon("skip") + "Complete job";
+
+            // stdout of the composite step: checksum line, then the report the binary prints,
+            // then its stderr and the runner's exit line.
+            const report = window.RG_REPORT.failed.split("\n");
+            const LOG = [["cmd", "Run set -euo pipefail"], ["", "risk-gate: OK"]]
+              .concat(report.map((l) => ["", l]))
+              .concat([
+                ["err", "risk-gate: configured gates blocked merge"],
+                ["err", "Error: Process completed with exit code 3."],
+              ]);
+            const linesEl = document.getElementById("actions-run-lines");
+            linesEl.innerHTML = LOG.map(function (l, i) {
+              const txt = l[1].replace(/&/g, "&amp;").replace(/</g, "&lt;");
+              return '<div class="ln ' + l[0] + '"><span class="n">' + (i + 1) + "</span><span>" + txt + "</span></div>";
+            }).join("");
+            const rows = linesEl.querySelectorAll(".ln");
+            const vp = document.getElementById("actions-run-vp");
+            const focus = document.getElementById("actions-run-focus");
+            const LH = 25;
+            const T_CHECKS = 1.0;
+            const T_L1 = 1.55;
+            const T_L2 = 1.95;
+            const T_DUMP = 3.45;
+            const T_FAIL = 3.6;
+            const valIdx = LOG.findIndex((l) => l[1].indexOf("`mutationTesting`: `FAILED`") >= 0);
+            function shownAt(t) {
+              if (t < T_L1) return 0;
+              if (t < T_L2) return 1;
+              if (t < T_DUMP) return 2;
+              return LOG.length;
+            }
+            const vpLines = Math.floor(220 / LH);
+            let failBox = null;
+
+            return RG.scene({
+              stage: stage,
+              cam: cam,
+              duration: 9,
+              measure: function () {
+                // Rows sit inside the scrolled log; place the box at its final scroll.
+                const vpBox = RG.box(vp, stage);
+                const top = vpBox.y + 6 + (valIdx - (LOG.length - vpLines)) * LH;
+                failBox = { x: vpBox.x + 4, y: top - 2, w: vpBox.w - 8, h: LH * (LOG.length - valIdx) + 4 };
+              },
+              cursorStart: { x: 852.5, y: 741.2 },
+              moves: [
+                { at: 0.3, dur: 0.6, to: { el: tabChecks, ax: 0.45, ay: 0.4 } },
+                { at: 4.6, dur: 0.9, to: { x: 1180, y: 620 } },
+                { at: 8.0, dur: 0.8, to: { el: tabConv, ax: 0.5, ay: 0.4 } },
+              ],
+              clicks: [T_CHECKS],
+              camera: [
+                { t: 0, z: 1, x: 960, y: 540 },
+                { t: 1.2, z: 1, x: 960, y: 540 },
+                { t: 2.0, z: 1.45, at: { el: s3, ax: 0.35, ay: 2.5 } },
+                { t: 3.5, z: 1.45, at: { el: s3, ax: 0.35, ay: 2.5 } },
+                { t: 4.3, z: 1.75, at: () => ({ x: failBox.x + failBox.w * 0.36, y: failBox.y + failBox.h * 0.5 }) },
+                { t: 6.6, z: 1.75, at: () => ({ x: failBox.x + failBox.w * 0.36, y: failBox.y + failBox.h * 0.5 }) },
+                { t: 7.6, z: 1, x: 960, y: 540 },
+              ],
+              render: function (t) {
+                page.style.opacity = RG.seg(t, 0, 0.2).toFixed(3);
+                const onChecks = t >= T_CHECKS + 0.05;
+                conv.style.opacity = onChecks ? "0" : "1";
+                checks.style.opacity = onChecks ? RG.seg(t, T_CHECKS + 0.05, 0.2).toFixed(3) : "0";
+                tabConv.classList.toggle("on", !onChecks);
+                tabChecks.classList.toggle("on", onChecks);
+
+                const failed = t >= T_FAIL;
+                const spin = "rotate(" + ((t * 360) % 360).toFixed(1) + "deg)";
+                s3.innerHTML =
+                  (failed ? RG.icon("x") : RG.icon("pending", "ico ar-spin")) +
+                  "Run CodeArq-tech/software-risk-gate@v0.1.0<span class='d'>" +
+                  (failed ? "14s" : "") +
+                  "</span>";
+                job.innerHTML = (failed ? RG.icon("x") : RG.icon("pending", "ico ar-spin")) + "risk-gate" + (failed ? "<span style='margin-left:auto;color:var(--muted);font-weight:400;font-size:16px'>14s</span>" : "");
+                stage.querySelectorAll(".ar-spin").forEach((el) => (el.style.transform = spin));
+                sub.textContent = failed ? "failed now in 14s" : "started now";
+
+                const n = shownAt(t);
+                rows.forEach((r, i) => (r.style.visibility = i < n ? "" : "hidden"));
+                const scroll = Math.max(0, n - vpLines) * LH;
+                linesEl.style.transform = scroll ? "translateY(" + -scroll + "px)" : "";
+
+                const f = RG.seg(t, 4.35, 0.35, "power2.out") * (1 - RG.seg(t, 6.6, 0.3));
+                focus.style.opacity = f.toFixed(3);
+                focus.style.left = failBox.x + "px";
+                focus.style.top = failBox.y + "px";
+                focus.style.width = failBox.w + "px";
+                focus.style.height = failBox.h + "px";
+                focus.style.borderColor = "#f43f5e";
+                focus.style.background = "rgba(244,63,94,0.12)";
+                focus.style.boxShadow = "0 0 0 6px rgba(244,63,94,0.18)";
+              },
+            });
+          });
+        })();
+      </script>
+    </template>
+  </body>
+</html>

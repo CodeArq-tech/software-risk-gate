@@ -3,7 +3,5 @@
 /* Hero film: the artwork is a real, locally bundled MP4 with native playback controls. */
 .hero-visual{aspect-ratio:16/9;min-height:0;overflow:visible;background:#111916;transform:none;isolation:isolate}
 .hero-video{position:absolute;inset:0;width:100%;height:100%;border:1px solid #35443a;border-radius:9px;object-fit:cover;background:#101716;box-shadow:0 30px 90px #0007,0 0 70px #b5ee6810}
-.video-top{position:absolute;z-index:2;top:1px;left:1px;right:1px;height:44px;padding:0 15px;display:flex;align-items:center;justify-content:space-between;border-radius:8px 8px 0 0;background:linear-gradient(#111916e8,#11191600);pointer-events:none}
-.video-caption{position:absolute;z-index:2;bottom:1px;left:1px;right:1px;padding:27px 16px 35px;display:flex;align-items:center;gap:8px;border-radius:0 0 8px 8px;background:linear-gradient(#11191600,#111916ed);color:#c3cec5;font-size:9px;pointer-events:none}
 .hero-visual .chip-one{top:18%;right:-23px}.hero-visual .chip-two{bottom:19%;left:-23px}
-@media(max-width:720px){.hero-visual{margin-inline:10px}.hero-visual .chip-one{right:-15px}.hero-visual .chip-two{left:-15px}.video-caption{padding:20px 10px 27px;font-size:8px}}
+@media(max-width:720px){.hero-visual{margin-inline:10px}.hero-visual .chip-one{right:-15px}.hero-visual .chip-two{left:-15px}}

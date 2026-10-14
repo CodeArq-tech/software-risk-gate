@@ -1,0 +1,457 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+  </head>
+  <body>
+    <template>
+      <style>
+        #root {
+          position: absolute;
+          inset: 0;
+        }
+        .rp-timeline {
+          position: relative;
+          margin: 26px 0 60px 44px;
+          width: 1080px;
+        }
+        .rp-side {
+          position: absolute;
+          left: 1170px;
+          right: 44px;
+          top: 210px;
+          font-size: 16px;
+          color: var(--muted);
+        }
+        .rp-side .grp {
+          padding: 14px 0;
+          border-bottom: 1px solid var(--border-muted);
+        }
+        .rp-side .grp b {
+          display: block;
+          color: var(--fg);
+          font-size: 16px;
+          margin-bottom: 6px;
+        }
+        .rp-item {
+          display: flex;
+          gap: 16px;
+          margin-bottom: 22px;
+        }
+        .rp-box {
+          flex: 1;
+          border: 1px solid var(--border);
+          border-radius: 10px;
+          overflow: hidden;
+        }
+        .rp-box .hd {
+          height: 50px;
+          background: var(--subtle);
+          border-bottom: 1px solid var(--border);
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 0 16px;
+          font-size: 17px;
+          color: var(--muted);
+        }
+        .rp-box .hd b {
+          color: var(--fg);
+        }
+        .rp-bot {
+          font-size: 13px;
+          padding: 1px 7px;
+          border: 1px solid var(--border);
+          border-radius: 10px;
+          color: var(--muted);
+        }
+        .rp-box .bd {
+          padding: 18px 20px 20px;
+        }
+        .rp-commit {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          margin: 0 0 22px 22px;
+          font-size: 17px;
+          color: var(--muted);
+        }
+        .rp-commit .sha {
+          margin-left: auto;
+          font-family: var(--mono);
+          font-size: 15px;
+        }
+        .md-mermaid {
+          margin: 12px 0 6px;
+          padding: 18px;
+          border: 1px solid var(--border-muted);
+          border-radius: 8px;
+          display: flex;
+          justify-content: center;
+        }
+        .md-mermaid text {
+          font-family: "Inter", sans-serif;
+        }
+.rp-mergeicon {
+          width: 48px;
+          height: 48px;
+          flex: none;
+          border-radius: 10px;
+          display: grid;
+          place-items: center;
+          color: #fff;
+        }
+        .rp-mergeicon svg {
+          width: 28px;
+          height: 28px;
+        }
+        .rp-merge .mg-row {
+          display: flex;
+          align-items: center;
+          gap: 14px;
+          padding: 16px 20px;
+          border-bottom: 1px solid var(--border-muted);
+          font-size: 18px;
+        }
+        .rp-merge .mg-row:last-child {
+          border-bottom: 0;
+        }
+        .rp-merge .mg-head b {
+          font-size: 19px;
+        }
+        .rp-merge .mg-sub {
+          display: block;
+          color: var(--muted);
+          font-size: 16px;
+          font-weight: 400;
+        }
+        .rp-merge .mg-row .ico {
+          width: 22px;
+          height: 22px;
+        }
+        .rp-merge .req {
+          font-size: 14px;
+          padding: 1px 8px;
+          border: 1px solid var(--border);
+          border-radius: 10px;
+          color: var(--muted);
+        }
+        .rp-merge .det {
+          margin-left: auto;
+          color: var(--accent);
+          font-size: 16px;
+        }
+        #report-pulse {
+          position: absolute;
+          width: 22px;
+          height: 22px;
+          margin: -11px 0 0 -11px;
+          border-radius: 50%;
+          background: #f43f5e;
+          box-shadow:
+            0 0 0 6px rgba(244, 63, 94, 0.25),
+            0 0 18px 6px rgba(244, 63, 94, 0.45);
+          opacity: 0;
+          z-index: 41;
+        }
+      </style>
+      <div id="root" data-composition-id="report" data-width="1920" data-height="1080">
+        <div class="rg-stage" id="report-stage">
+          <div class="rg-cam" id="report-cam">
+            <div class="win" id="report-win">
+              <div class="gh-page" id="report-page">
+                <div class="gh-scroll" id="report-scroll">
+                  <div class="rp-timeline" id="report-timeline">
+                    <div class="rp-item">
+                      <div class="gh-avatar av-dana">D</div>
+                      <div class="rp-box">
+                        <div class="hd"><b>dana</b> commented 2 minutes ago</div>
+                        <div class="bd" style="font-size: 18px">Replace the manual loop with reduce.</div>
+                      </div>
+                    </div>
+                    <div class="rp-commit" id="report-commit"></div>
+                    <div class="rp-item">
+                      <div class="gh-avatar av-bot">GA</div>
+                      <div class="rp-box" id="report-comment">
+                        <div class="hd"><b>github-actions</b><span class="rp-bot">bot</span> commented now</div>
+                        <div class="bd md" id="report-md"></div>
+                      </div>
+                    </div>
+                    <div class="rp-commit" id="report-commit2"></div>
+                    <div class="rp-item">
+                      <div class="rp-mergeicon" id="report-mergeicon"></div>
+                      <div class="rp-box rp-merge" id="report-merge">
+                        <div class="mg-row mg-head" id="report-mg-head"></div>
+                        <div class="mg-row" id="report-mg-check"></div>
+                        <div class="mg-row" id="report-mg-rule"></div>
+                        <div class="mg-row mg-foot"><div class="btn" id="report-mg-btn">Merge pull request</div><span id="report-mg-note"></span></div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="rp-side">
+                    <div class="grp"><b>Reviewers</b>No reviews</div>
+                    <div class="grp"><b>Assignees</b>No one assigned</div>
+                    <div class="grp"><b>Labels</b>None yet</div>
+                  </div>
+                  <div class="rg-focus" id="report-focus-a"></div>
+                  <div class="rg-focus" id="report-focus-b"></div>
+                  <div class="rg-focus" id="report-focus-c"></div>
+                  <div id="report-pulse"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <script>
+        (function () {
+          RG.mount("report", 19.2, function () {
+            const stage = document.getElementById("report-stage");
+            const cam = document.getElementById("report-cam");
+            const win = document.getElementById("report-win");
+            const page = document.getElementById("report-page");
+            const scrollEl = document.getElementById("report-scroll");
+            RG.chrome(win, { path: "/acme/storefront/pull/42", tab: "Pull requests", prs: "3" });
+            const head = RG.prHeader(scrollEl, { tab: "Checks" });
+            const tabConv = head.querySelector('[data-tab="Conversation"]');
+            const tabChecks = head.querySelector('[data-tab="Checks"]');
+            document.getElementById("report-commit").innerHTML =
+              RG.icon("commit") +
+              "<span><b style='color:var(--fg)'>dana</b> added 1 commit</span>" +
+              RG.icon("x") +
+              "<span style='color:var(--fg)'>Speed up checkout totals</span><span class='sha'>3f9c2ab</span>";
+            const commit2 = document.getElementById("report-commit2");
+            const mdEl = document.getElementById("report-md");
+            mdEl.innerHTML = RGMD.render(window.RG_REPORT.failed);
+            const sec = (name) => mdEl.querySelector('[data-sec="' + name + '"]');
+            const lis = Array.prototype.slice.call(mdEl.querySelectorAll(":scope > ul > li"));
+            const findLi = (text) => lis.find((li) => li.textContent.indexOf(text) === 0);
+            const summary = [findLi("Risk:"), findLi("Merge blocked:")];
+            const cascadeH = sec("Cascade impact");
+            const diagram = mdEl.querySelector(".md-mermaid");
+            const validH = sec("Validations");
+            const failLi = findLi("mutationTesting:");
+            const focusA = document.getElementById("report-focus-a");
+            const focusB = document.getElementById("report-focus-b");
+            const focusC = document.getElementById("report-focus-c");
+            const pulse = document.getElementById("report-pulse");
+            const edges = Array.prototype.slice.call(mdEl.querySelectorAll(".mm-edge"));
+            const svg = mdEl.querySelector("svg.mm");
+            const merge = document.getElementById("report-merge");
+            const mIcon = document.getElementById("report-mergeicon");
+            const mHead = document.getElementById("report-mg-head");
+            const mCheck = document.getElementById("report-mg-check");
+            const mRule = document.getElementById("report-mg-rule");
+            const mBtn = document.getElementById("report-mg-btn");
+            const mNote = document.getElementById("report-mg-note");
+
+            // Merge box states: failing -> re-running -> passing -> merged.
+            const T_PUSH = 15.2;
+            const T_PASS = 16.6;
+            const T_MERGE = 17.55;
+            const T_CONFIRM = 18.05;
+            const T_MERGED = 18.2;
+            const STATES = {
+              failing: {
+                bg: "#d1242f",
+                icon: RG.icon("x").replace('fill="#d1242f"', 'fill="none"'),
+                head: "<div><b>Some checks were not successful</b><span class='mg-sub'>1 failing check</span></div>",
+                check: RG.icon("x") + "<b>Risk Gate / risk-gate (pull_request)</b><span style='color:var(--muted)'>Failing after 14s</span><span class='req'>Required</span><span class='det'>Details</span>",
+                rule: RG.icon("x") + "<div><b>Merging is blocked</b><span class='mg-sub'>The base branch requires all required status checks to pass.</span></div>",
+                btn: "disabled",
+              },
+              pending: {
+                bg: "#bf8700",
+                icon: RG.icon("dot").replace('fill="#bf8700"', 'fill="#ffffff"'),
+                head: "<div><b>Some checks haven’t completed yet</b><span class='mg-sub'>1 in progress check</span></div>",
+                check: RG.icon("pending", "ico rp-spin") + "<b>Risk Gate / risk-gate (pull_request)</b><span style='color:var(--muted)'>In progress</span><span class='req'>Required</span><span class='det'>Details</span>",
+                rule: RG.icon("x") + "<div><b>Merging is blocked</b><span class='mg-sub'>The base branch requires all required status checks to pass.</span></div>",
+                btn: "disabled",
+              },
+              passing: {
+                bg: "#1f883d",
+                icon: RG.icon("check").replace('fill="#1a7f37"', 'fill="none"'),
+                head: "<div><b>All checks have passed</b><span class='mg-sub'>1 successful check</span></div>",
+                check: RG.icon("check") + "<b>Risk Gate / risk-gate (pull_request)</b><span style='color:var(--muted)'>Successful in 15s</span><span class='req'>Required</span><span class='det'>Details</span>",
+                rule: RG.icon("check") + "<div><b>No conflicts with base branch</b><span class='mg-sub'>Merging can be performed automatically.</span></div>",
+                btn: "primary",
+              },
+              merged: {
+                bg: "#8250df",
+                icon: RG.icon("merged", "ico"),
+                head: "<div><b>Pull request successfully merged and closed</b><span class='mg-sub'>The speed-up-checkout branch can be safely deleted.</span></div>",
+                check: RG.icon("check") + "<b>Risk Gate / risk-gate (pull_request)</b><span style='color:var(--muted)'>Successful in 15s</span><span class='req'>Required</span><span class='det'>Details</span>",
+                rule: RG.icon("merged", "ico") + "<div><b>dana merged commit 8e41d07 into main</b><span class='mg-sub'>now</span></div>",
+                btn: "merged",
+              },
+            };
+            let shownState = null;
+            function setState(name, t) {
+              if (name !== shownState) {
+                const st = STATES[name];
+                mIcon.style.background = st.bg;
+                mIcon.innerHTML = st.icon;
+                mHead.innerHTML = st.head;
+                mCheck.innerHTML = st.check;
+                mRule.innerHTML = st.rule;
+                mRule.querySelector(".ico").style.color = "#8250df";
+                mBtn.className = "btn" + (st.btn === "primary" ? " primary" : st.btn === "disabled" ? " disabled" : "");
+                shownState = name;
+              }
+              const confirm = t >= T_MERGE + 0.12 && t < T_MERGED;
+              mBtn.textContent = shownState === "merged" ? "Delete branch" : confirm ? "Confirm merge" : "Merge pull request";
+              stage.querySelectorAll(".rp-spin").forEach((el) => (el.style.transform = "rotate(" + ((t * 360) % 360).toFixed(1) + "deg)"));
+            }
+            setState("failing", 0);
+            commit2.innerHTML =
+              RG.icon("commit") +
+              "<span><b style='color:var(--fg)'>dana</b> added 1 commit</span><span id='report-c2icon'></span><span style='color:var(--fg)'>Kill surviving mutants in charge</span><span class='sha'>8e41d07</span>";
+            const c2icon = document.getElementById("report-c2icon");
+
+            let S1 = 0;
+            let S2 = 0;
+            let S3 = 0;
+            let boxSummary = null;
+            let boxDiagram = null;
+            let boxFail = null;
+            let boxRule = null;
+            let chain = [];
+            const scrollAt = (t) =>
+              RG.mix(0, S1, RG.seg(t, 3.4, 1.0, "power2.inOut")) +
+              (S2 - S1) * RG.seg(t, 7.9, 0.9, "power2.inOut") +
+              (S3 - S2) * RG.seg(t, 11.9, 1.0, "power2.inOut");
+            function inScroll(el) {
+              return RG.box(el, scrollEl);
+            }
+            function around(a, b, pad) {
+              return { x: a.x - pad, y: a.y - pad, w: Math.max(a.x + a.w, b.x + b.w) - a.x + pad * 2, h: b.y + b.h - a.y + pad * 2 };
+            }
+            // Stage-space point of a scroll-space box at time t.
+            function aim(boxFn, ax, ay) {
+              return function (t) {
+                const b = boxFn();
+                const origin = RG.box(scrollEl, stage);
+                return { x: origin.x + b.x + b.w * ax, y: origin.y + b.y + b.h * ay - scrollAt(t) };
+              };
+            }
+            const aimBtn = function (t) {
+              const b = inScroll(mBtn);
+              const origin = RG.box(scrollEl, stage);
+              return { x: origin.x + b.x + b.w * 0.5, y: origin.y + b.y + b.h * 0.55 - scrollAt(t) };
+            };
+
+            return RG.scene({
+              stage: stage,
+              cam: cam,
+              duration: 19.2,
+              measure: function () {
+                const pageH = page.offsetHeight;
+                S1 = Math.max(0, inScroll(cascadeH).y - 30);
+                S2 = inScroll(validH).y - 30;
+                S3 = scrollEl.offsetHeight - pageH;
+                const a = inScroll(summary[0]);
+                const b = inScroll(summary[1]);
+                boxSummary = around({ x: a.x, y: a.y, w: 420, h: a.h }, { x: b.x, y: b.y, w: 420, h: b.h }, 6);
+                boxDiagram = around(inScroll(diagram), inScroll(diagram), 4);
+                const f = inScroll(failLi);
+                boxFail = { x: f.x - 34, y: f.y - 4, w: f.w + 40, h: f.h + 8 };
+                boxRule = around(inScroll(merge), inScroll(merge), 4);
+                // Pulse path: checkout -> charge -> fraud (the danger chain).
+                const sb = inScroll(svg);
+                const scale = sb.w / svg.viewBox.baseVal.width;
+                chain = [edges[0], edges[2]].filter(Boolean).map(function (p) {
+                  const len = p.getTotalLength();
+                  const pts = [];
+                  for (let i = 0; i <= 40; i++) {
+                    const q = p.getPointAtLength((len * i) / 40);
+                    pts.push({ x: sb.x + q.x * scale, y: sb.y + q.y * scale });
+                  }
+                  return pts;
+                });
+              },
+              cursorStart: { el: tabConv, ax: 0.5, ay: 0.4 },
+              moves: [
+                { at: 2.9, dur: 0.8, to: { x: 1500, y: 600 } },
+                { at: 7.4, dur: 0.7, to: { x: 1420, y: 700 } },
+                { at: 16.7, dur: 0.75, to: aimBtn },
+                { at: 17.75, dur: 0.25, to: (t) => ({ x: aimBtn(t).x + 6, y: aimBtn(t).y }) },
+              ],
+              clicks: [T_MERGE, T_CONFIRM],
+              camera: [
+                { t: 0, z: 1, x: 960, y: 540 },
+                { t: 0.35, z: 1, x: 960, y: 540 },
+                { t: 1.2, z: 1.6, at: aim(() => boxSummary, 0.45, 0.5) },
+                { t: 3.1, z: 1.6, at: aim(() => boxSummary, 0.45, 0.5) },
+                { t: 4.0, z: 1.15, at: aim(() => boxDiagram, 0.5, 0.2) },
+                { t: 4.8, z: 1.5, at: aim(() => boxDiagram, 0.5, 0.5) },
+                { t: 7.5, z: 1.5, at: aim(() => boxDiagram, 0.5, 0.5) },
+                { t: 8.4, z: 1.15, at: aim(() => boxFail, 0.4, 0.5) },
+                { t: 9.2, z: 1.7, at: aim(() => boxFail, 0.4, 0.5) },
+                { t: 11.0, z: 1.7, at: aim(() => boxFail, 0.4, 0.5) },
+                { t: 11.8, z: 1, x: 960, y: 540 },
+                { t: 12.6, z: 1, x: 960, y: 540 },
+                { t: 13.4, z: 1.45, at: aim(() => boxRule, 0.45, 0.5) },
+                { t: 18.4, z: 1.45, at: aim(() => boxRule, 0.45, 0.5) },
+                { t: 19.2, z: 1, x: 960, y: 540 },
+              ],
+              render: function (t, fx) {
+                page.style.opacity = RG.seg(t, 0, 0.2).toFixed(3);
+                const onConv = t >= 0.05;
+                tabConv.classList.toggle("on", onConv);
+                tabChecks.classList.toggle("on", !onConv);
+                const s = scrollAt(t);
+                scrollEl.style.transform = s ? "translateY(" + (-s).toFixed(1) + "px)" : "";
+
+                const fa = RG.seg(t, 1.25, 0.35, "power2.out") * (1 - RG.seg(t, 3.1, 0.3));
+                const fb = RG.seg(t, 4.85, 0.35, "power2.out") * (1 - RG.seg(t, 7.4, 0.3));
+                const fc = RG.seg(t, 9.25, 0.35, "power2.out") * (1 - RG.seg(t, 11.0, 0.3));
+                [
+                  [focusA, boxSummary, fa],
+                  [focusB, boxDiagram, fb],
+                  [focusC, boxFail, fc],
+                ].forEach(function (f) {
+                  f[0].style.opacity = f[2].toFixed(3);
+                  f[0].style.left = f[1].x + "px";
+                  f[0].style.top = f[1].y + "px";
+                  f[0].style.width = f[1].w + "px";
+                  f[0].style.height = f[1].h + "px";
+                });
+                focusC.style.borderColor = "#f43f5e";
+                focusC.style.background = "rgba(244,63,94,0.10)";
+                focusC.style.boxShadow = "0 0 0 6px rgba(244,63,94,0.16)";
+
+                // The pulse walks the danger chain twice while the diagram is in focus.
+                const u = RG.seg(t, 5.1, 2.2);
+                if (u > 0 && u < 1 && chain.length) {
+                  const along = ((u * 2) % 1) * chain.length;
+                  const seg = Math.min(chain.length - 1, Math.floor(along));
+                  const pts = chain[seg];
+                  const k = Math.min(pts.length - 1, Math.round((along - seg) * (pts.length - 1)));
+                  pulse.style.opacity = "1";
+                  pulse.style.left = pts[k].x + "px";
+                  pulse.style.top = pts[k].y + "px";
+                } else pulse.style.opacity = "0";
+
+                // A fix is pushed, the gate re-runs, and merging unlocks.
+                const pushed = RG.seg(t, T_PUSH, 0.4, "power2.out");
+                commit2.style.opacity = pushed.toFixed(3);
+                commit2.style.transform = pushed > 0 && pushed < 1 ? "translateX(" + ((1 - pushed) * -24).toFixed(1) + "px)" : "";
+                const state = t >= T_MERGED ? "merged" : t >= T_PASS ? "passing" : t >= T_PUSH + 0.3 ? "pending" : "failing";
+                const c2 = t >= T_PASS ? "check" : "pending";
+                if (c2icon.dataset.k !== c2) {
+                  c2icon.innerHTML = RG.icon(c2, c2 === "pending" ? "ico rp-spin" : "ico");
+                  c2icon.dataset.k = c2;
+                }
+                setState(state, t);
+                const p = Math.max(fx.press(t - T_MERGE), fx.press(t - T_CONFIRM));
+                mBtn.style.transform = p ? "scale(" + (1 - 0.05 * p).toFixed(3) + ")" : "";
+                const pop = RG.seg(t, T_PASS, 0.35, "back.out(2)");
+                mIcon.style.transform = (t >= T_PASS && pop < 1) || (t >= T_MERGED && RG.seg(t, T_MERGED, 0.35) < 1) ? "scale(" + (0.8 + 0.2 * (t >= T_MERGED ? RG.seg(t, T_MERGED, 0.35, "back.out(2)") : pop)).toFixed(3) + ")" : "";
+              },
+            });
+          });
+        })();
+      </script>
+    </template>
+  </body>
+</html>

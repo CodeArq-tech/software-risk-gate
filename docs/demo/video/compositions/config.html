@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+  </head>
+  <body>
+    <template>
+      <style>
+        #root {
+          position: absolute;
+          inset: 0;
+        }
+      </style>
+      <div data-hf-id="hf-dp1t" id="root" data-composition-id="config" data-width="1920" data-height="1080">
+        <div data-hf-id="hf-t90p" class="rg-stage" id="config-stage">
+          <div data-hf-id="hf-ra2d" class="rg-cam" id="config-cam">
+            <div data-hf-id="hf-tkbb" class="win" id="config-win">
+              <div data-hf-id="hf-d8of" class="gh-page">
+                <div data-hf-id="hf-zob9" class="ed-top">
+                  <span data-hf-id="hf-snqp" class="repo">storefront</span><span data-hf-id="hf-pfeh" class="in">/</span>
+                  <div data-hf-id="hf-m2vt" class="ed-file" id="config-file">
+                    <span data-hf-id="hf-e5os" class="ph" id="config-ph">Name your file...</span><span data-hf-id="hf-acqg" id="config-name">.risk-gate.yaml</span>
+                  </div>
+                  <span data-hf-id="hf-cxyb" class="in">in</span><span data-hf-id="hf-lji2" class="ed-branch">main</span>
+                  <div data-hf-id="hf-x5ec" class="spacer"></div>
+                  <div data-hf-id="hf-w5bf" class="btn">Cancel changes</div>
+                  <div data-hf-id="hf-l7ce" class="btn primary" id="config-commit">Commit changes...</div>
+                </div>
+                <div data-hf-id="hf-k9sv" class="ed-box">
+                  <div data-hf-id="hf-3988" class="ed-tabs">
+                    <div data-hf-id="hf-wvl7" class="t on">Edit</div>
+                    <div data-hf-id="hf-s6mw" class="t">Preview</div>
+                    <div data-hf-id="hf-1ing" class="spacer"></div>
+                    <div data-hf-id="hf-8nmn" class="opt">Spaces · 2 · No wrap</div>
+                  </div>
+                  <div data-hf-id="hf-3sgw" class="ed-body">
+                    <div data-hf-id="hf-1fb3" class="ed-lines" id="config-lines"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div data-hf-id="hf-w9ij" class="caret" id="config-caret"></div>
+            <div data-hf-id="hf-lvhb" class="rg-focus" id="config-focus-a"></div>
+            <div data-hf-id="hf-d7lg" class="rg-focus" id="config-focus-b"></div>
+          </div>
+        </div>
+      </div>
+      <script>
+        (function () {
+          const YAML = [
+            "version: 1",
+            "",
+            "riskMap:",
+            "  - path: src/payment/",
+            "    risk: danger",
+            '    description: "Payments and authorization"',
+            "  - path: src/api/",
+            "    risk: normal",
+            "  - path: tests/",
+            "    risk: minimal",
+            "",
+            "gateRules:",
+            "  minimal:",
+            "    instantMerge: true",
+            "  danger:",
+            "    validations: [e2e, mutationTesting]",
+            "",
+            "validations:",
+            "  e2e:",
+            '    command: "./scripts/test-e2e.sh"',
+            "    timeoutSeconds: 1800",
+            "  mutationTesting:",
+            '    command: "./scripts/mutation-test.sh"',
+            "    timeoutSeconds: 3600",
+          ].join("\n");
+
+          RG.mount("config", 10.7, function () {
+            const stage = document.getElementById("config-stage");
+            const cam = document.getElementById("config-cam");
+            const win = document.getElementById("config-win");
+            RG.chrome(win, { path: "/acme/storefront/new/main", tab: "Code", prs: "2" });
+            const lines = document.getElementById("config-lines");
+            RG.editorLines(lines, YAML);
+            const name = RG.typer(document.getElementById("config-name"), stage);
+            const code = RG.typer(lines, stage, { lineSel: ".ed-line", textSel: ".c" });
+            const file = document.getElementById("config-file");
+            const ph = document.getElementById("config-ph");
+            const caret = document.getElementById("config-caret");
+            const focusA = document.getElementById("config-focus-a");
+            const focusB = document.getElementById("config-focus-b");
+            const lineEls = lines.querySelectorAll(".ed-line");
+
+            const T_FILE = 1.35;
+            const T_EDIT = 2.85;
+            const T_COMMIT = 10.2;
+            const nameAt = RG.schedule([{ at: 1.45, dur: 0.8, to: name.count }]);
+            const splitA = code.lineStartIndex(10);
+            const codeAt = RG.schedule([
+              { at: 2.95, dur: 2.95, to: splitA },
+              { at: 5.9, dur: 1.8, to: code.count },
+            ]);
+            let focusBoxA = null;
+            let focusBoxB = null;
+            function linesBox(from, to) {
+              const a = RG.box(lineEls[from].querySelector(".c"), stage);
+              const b = RG.box(lineEls[to].querySelector(".c"), stage);
+              const w = Math.max(a.w, b.w);
+              return { x: a.x - 10, y: a.y - 4, w: w + 24, h: b.y + b.h - a.y + 8 };
+            }
+            function caretAim(t) {
+              const c = code.caret(codeAt(t));
+              return { x: RG.mix(560, c.x, 0.4), y: c.y + 10 };
+            }
+
+            return RG.scene({
+              stage: stage,
+              cam: cam,
+              duration: 10.7,
+              measure: function () {
+                const ok = code.measure() && name.measure();
+                focusBoxA = linesBox(3, 4);
+                focusBoxB = linesBox(14, 15);
+                return ok;
+              },
+              cursorStart: { x: 1320, y: 980 },
+              cursorVisible: (t) => t > 0.55,
+              moves: [
+                { at: 0.7, dur: 0.6, to: { el: file, ax: 0.3, ay: 0.55 } },
+                { at: 2.3, dur: 0.5, to: { el: lineEls[0].querySelector(".c"), ax: 0.35, ay: 0.6 } },
+                { at: 9.35, dur: 0.75, to: { el: document.getElementById("config-commit"), ax: 0.45, ay: 0.55 } },
+              ],
+              clicks: [T_FILE, T_EDIT, T_COMMIT],
+              camera: [
+                { t: 0, z: 1, x: 960, y: 540 },
+                { t: 0.95, z: 1, at: { el: file, ax: 0.4, ay: 0.5 } },
+                { t: 1.5, z: 1.6, at: { el: file, ax: 0.4, ay: 0.5 } },
+                { t: 2.3, z: 1.6, at: { el: file, ax: 0.6, ay: 0.5 } },
+                { t: 3.1, z: 1.8, at: caretAim },
+                { t: 7.7, z: 1.8, at: caretAim },
+                { t: 8.4, z: 1.35, x: 720, y: 520 },
+                { t: 9.2, z: 1.35, x: 720, y: 520 },
+                { t: 9.9, z: 1, x: 960, y: 540 },
+              ],
+              render: function (t, fx) {
+                const enter = RG.seg(t, 0, 0.8, "power3.out");
+                win.style.opacity = enter.toFixed(3);
+                win.style.transform =
+                  enter < 1 ? "translateY(" + ((1 - enter) * 70).toFixed(1) + "px) scale(" + (0.94 + 0.06 * enter).toFixed(4) + ")" : "";
+
+                const typedName = nameAt(t);
+                name.set(typedName);
+                ph.style.visibility = typedName >= 1 ? "hidden" : "";
+                file.classList.toggle("focus", t >= T_FILE && t < T_EDIT);
+
+                const k = codeAt(t);
+                code.set(k);
+                let cp = null;
+                if (t >= T_FILE && t < T_EDIT) cp = name.caret(typedName);
+                else if (t >= T_EDIT && t < T_COMMIT) cp = code.caret(k);
+                const blinkOn = t < 7.7 || Math.floor((t - 7.7) / 0.5) % 2 === 0;
+                caret.style.opacity = cp && blinkOn ? "1" : "0";
+                if (cp) caret.style.transform = "translate(" + cp.x.toFixed(1) + "px," + cp.y.toFixed(1) + "px)";
+
+                const fa = RG.seg(t, 7.85, 0.35, "power2.out") * (1 - RG.seg(t, 9.25, 0.3));
+                const fb = RG.seg(t, 8.3, 0.35, "power2.out") * (1 - RG.seg(t, 9.25, 0.3));
+                [
+                  [focusA, focusBoxA, fa],
+                  [focusB, focusBoxB, fb],
+                ].forEach(function (f) {
+                  const el = f[0];
+                  const b = f[1];
+                  el.style.opacity = f[2].toFixed(3);
+                  el.style.left = b.x + "px";
+                  el.style.top = b.y + "px";
+                  el.style.width = b.w + "px";
+                  el.style.height = b.h + "px";
+                  el.style.transform = f[2] > 0 && f[2] < 1 ? "scale(" + (1.06 - 0.06 * f[2]).toFixed(3) + ")" : "";
+                });
+                document.getElementById("config-commit").style.transform =
+                  fx.press(t - T_COMMIT) ? "scale(" + (1 - 0.05 * fx.press(t - T_COMMIT)).toFixed(3) + ")" : "";
+              },
+            });
+          });
+        })();
+      </script>
+    </template>
+  </body>
+</html>

@@ -1,0 +1,123 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+  </head>
+  <body>
+    <template>
+      <style>
+        #root {
+          position: absolute;
+          inset: 0;
+          font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+          pointer-events: none;
+        }
+        .cap {
+          position: absolute;
+          left: 0;
+          right: 0;
+          top: 908px;
+          display: flex;
+          justify-content: center;
+          opacity: 0;
+        }
+        .cap-pill {
+          max-width: 1520px;
+          height: 66px;
+          padding: 0 30px 0 12px;
+          border-radius: 33px;
+          background: rgba(255, 255, 255, 0.96);
+          box-shadow:
+            0 18px 40px -16px rgba(15, 23, 42, 0.35),
+            0 0 0 1px rgba(15, 23, 42, 0.06);
+          display: flex;
+          align-items: center;
+          gap: 18px;
+        }
+        .cap-tag {
+          height: 44px;
+          padding: 0 16px;
+          border-radius: 22px;
+          background: #0f172a;
+          color: #f8fafc;
+          font-family: "JetBrains Mono", ui-monospace, monospace;
+          font-size: 18px;
+          font-weight: 500;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          white-space: nowrap;
+        }
+        .cap-dot {
+          width: 10px;
+          height: 10px;
+          border-radius: 50%;
+          display: block;
+        }
+        .cap-text {
+          font-size: 30px;
+          font-weight: 600;
+          color: #0f172a;
+          letter-spacing: -0.01em;
+          white-space: nowrap;
+          display: flex;
+          gap: 0.27em;
+        }
+        .cap-text span {
+          display: inline-block;
+        }
+      </style>
+      <div id="root" data-composition-id="captions" data-width="1920" data-height="1080"></div>
+      <script>
+        (function () {
+          // [key, tag, dot colour, start, end] in root seconds.
+          const CAPTIONS = [
+            ["c1", ".risk-gate.yaml", "#3b82f6", 5.2, 9.6],
+            ["c2", "riskMap", "#f43f5e", 9.9, 14.7],
+            ["c3", "GitHub Actions", "#14b8a6", 15.3, 22.7],
+            ["c4", "pull_request", "#3b82f6", 23.3, 29.7],
+            ["c5", "AST", "#f59e0b", 30.4, 33.3],
+            ["c6", "FAILED", "#f43f5e", 33.6, 38.8],
+            ["c7", "report", "#3b82f6", 39.3, 42.9],
+            ["c8", "cascade", "#f97316", 43.2, 46.9],
+            ["c9", "validations", "#f43f5e", 47.2, 50.8],
+            ["c10", "merge_blocked", "#f43f5e", 51.3, 54.6],
+            ["c11", "re-run", "#14b8a6", 54.9, 57.7],
+          ];
+          const root = document.querySelector('[data-composition-id="captions"]');
+          const tl = gsap.timeline({ paused: true });
+          CAPTIONS.forEach(function (c, i) {
+            const cap = document.createElement("div");
+            cap.className = "cap";
+            cap.id = "captions-" + c[0];
+            cap.innerHTML =
+              '<div class="cap-pill"><div class="cap-tag" data-layout-allow-overlap><span class="cap-dot" style="background:' +
+              c[2] +
+              '"></span>' +
+              c[1] +
+              '</div><div class="cap-text" data-layout-allow-overlap></div></div>';
+            const text = cap.querySelector(".cap-text");
+            RG.t(c[0])
+              .split(" ")
+              .forEach(function (word) {
+                const s = document.createElement("span");
+                // The pill is opaque and sits over the scene on purpose.
+                s.setAttribute("data-layout-allow-overlap", "");
+                s.textContent = word;
+                text.appendChild(s);
+              });
+            root.appendChild(cap);
+            const sel = "#" + cap.id;
+            tl.set(sel, { opacity: 1 }, c[3]);
+            tl.fromTo(sel + " .cap-pill", { y: 24, scale: 0.96, opacity: 0 }, { y: 0, scale: 1, opacity: 1, duration: 0.45, ease: "back.out(1.4)" }, c[3]);
+            tl.fromTo(sel + " .cap-text span", { y: 12, opacity: 0 }, { y: 0, opacity: 1, duration: 0.35, ease: "power3.out", stagger: 0.035 }, c[3] + 0.12);
+            tl.to(sel + " .cap-pill", { y: -10, opacity: 0, duration: 0.3, ease: "power2.in" }, c[4] - 0.3);
+            tl.set(sel, { opacity: 0 }, c[4]);
+          });
+          tl.set({}, {}, 64);
+          window.__timelines["captions"] = tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>

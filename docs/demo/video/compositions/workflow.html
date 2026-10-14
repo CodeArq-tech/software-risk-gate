@@ -1,0 +1,172 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+  </head>
+  <body>
+    <template>
+      <style>
+        #root {
+          position: absolute;
+          inset: 0;
+        }
+        #workflow-file {
+          min-width: 520px;
+        }
+      </style>
+      <div id="root" data-composition-id="workflow" data-width="1920" data-height="1080">
+        <div class="rg-stage" id="workflow-stage">
+          <div class="rg-cam" id="workflow-cam">
+            <div class="win" id="workflow-win">
+              <div class="gh-page" id="workflow-page">
+                <div class="ed-top">
+                  <span class="repo">storefront</span><span class="in">/</span>
+                  <div class="ed-file" id="workflow-file">
+                    <span class="ph" id="workflow-ph">Name your file...</span><span id="workflow-name">.github/workflows/risk-gate.yml</span>
+                  </div>
+                  <span class="in">in</span><span class="ed-branch">main</span>
+                  <div class="spacer"></div>
+                  <div class="btn">Cancel changes</div>
+                  <div class="btn primary" id="workflow-commit">Commit changes...</div>
+                </div>
+                <div class="ed-box">
+                  <div class="ed-tabs">
+                    <div class="t on">Edit</div>
+                    <div class="t">Preview</div>
+                    <div class="spacer"></div>
+                    <div class="opt">Spaces · 2 · No wrap</div>
+                  </div>
+                  <div class="ed-body">
+                    <div class="ed-lines" id="workflow-lines"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="caret" id="workflow-caret"></div>
+            <div class="rg-focus" id="workflow-focus"></div>
+          </div>
+        </div>
+      </div>
+      <script>
+        (function () {
+          const YAML = [
+            "name: Risk Gate",
+            "",
+            "on:",
+            "  pull_request:",
+            "    types: [opened, synchronize, reopened, ready_for_review]",
+            "",
+            "permissions:",
+            "  contents: read",
+            "  pull-requests: read",
+            "  issues: write",
+            "",
+            "jobs:",
+            "  risk-gate:",
+            "    runs-on: ubuntu-latest",
+            "    steps:",
+            "      - uses: actions/checkout@v4",
+            "        with:",
+            "          fetch-depth: 0",
+            "      - uses: CodeArq-tech/software-risk-gate@v0.1.0",
+            "        with:",
+            "          token: ${{ secrets.GITHUB_TOKEN }}",
+          ].join("\n");
+
+          RG.mount("workflow", 8, function () {
+            const stage = document.getElementById("workflow-stage");
+            const cam = document.getElementById("workflow-cam");
+            const win = document.getElementById("workflow-win");
+            const page = document.getElementById("workflow-page");
+            RG.chrome(win, { path: "/acme/storefront/new/main", tab: "Code", prs: "2" });
+            const lines = document.getElementById("workflow-lines");
+            RG.editorLines(lines, YAML);
+            const name = RG.typer(document.getElementById("workflow-name"), stage);
+            const code = RG.typer(lines, stage, { lineSel: ".ed-line", textSel: ".c" });
+            const file = document.getElementById("workflow-file");
+            const ph = document.getElementById("workflow-ph");
+            const caret = document.getElementById("workflow-caret");
+            const focus = document.getElementById("workflow-focus");
+            const commit = document.getElementById("workflow-commit");
+            const lineEls = lines.querySelectorAll(".ed-line");
+
+            const T_FILE = 0.95;
+            const T_EDIT = 2.35;
+            const T_COMMIT = 7.55;
+            const nameAt = RG.schedule([{ at: 1.05, dur: 0.8, to: name.count }]);
+            const split = code.lineStartIndex(18);
+            const codeAt = RG.schedule([
+              { at: 2.45, dur: 1.45, to: split },
+              { at: 3.95, dur: 1.95, to: code.count },
+            ]);
+            let focusBox = null;
+            function caretAim(t) {
+              const c = code.caret(codeAt(t));
+              return { x: RG.mix(620, c.x, 0.45), y: c.y + 10 };
+            }
+
+            return RG.scene({
+              id: "workflow",
+              stage: stage,
+              cam: cam,
+              duration: 8,
+              measure: function () {
+                const ok = code.measure() && name.measure();
+                const a = RG.box(lineEls[18].querySelector(".c"), stage);
+                const b = RG.box(lineEls[20].querySelector(".c"), stage);
+                focusBox = { x: a.x - 10, y: a.y - 4, w: Math.max(a.w, b.w) + 24, h: b.y + b.h - a.y + 8 };
+                return ok;
+              },
+              cursorStart: { el: commit, ax: 0.45, ay: 0.55 },
+              moves: [
+                { at: 0.35, dur: 0.55, to: { el: file, ax: 0.25, ay: 0.55 } },
+                { at: 1.9, dur: 0.42, to: { el: lineEls[0].querySelector(".c"), ax: 0.4, ay: 0.6 } },
+                { at: 6.85, dur: 0.65, to: { el: commit, ax: 0.45, ay: 0.55 } },
+              ],
+              clicks: [T_FILE, T_EDIT, T_COMMIT],
+              camera: [
+                { t: 0, z: 1, x: 960, y: 540 },
+                { t: 0.5, z: 1, at: { el: file, ax: 0.45, ay: 0.5 } },
+                { t: 1.1, z: 1.6, at: { el: file, ax: 0.45, ay: 0.5 } },
+                { t: 2.0, z: 1.6, at: { el: file, ax: 0.6, ay: 0.5 } },
+                { t: 2.7, z: 1.3, at: caretAim },
+                { t: 3.9, z: 1.3, at: caretAim },
+                { t: 4.4, z: 2.0, at: caretAim },
+                { t: 6.0, z: 2.0, at: caretAim },
+                { t: 6.5, z: 1.7, at: { el: lineEls[19], ax: 0.32, ay: 0.5 } },
+                { t: 6.9, z: 1.7, at: { el: lineEls[19], ax: 0.32, ay: 0.5 } },
+                { t: 7.45, z: 1, x: 960, y: 540 },
+              ],
+              render: function (t, fx) {
+                page.style.opacity = RG.seg(t, 0, 0.25).toFixed(3);
+                const typedName = nameAt(t);
+                name.set(typedName);
+                ph.style.visibility = typedName >= 1 ? "hidden" : "";
+                file.classList.toggle("focus", t >= T_FILE && t < T_EDIT);
+
+                const k = codeAt(t);
+                code.set(k);
+                let cp = null;
+                if (t >= T_FILE && t < T_EDIT) cp = name.caret(typedName);
+                else if (t >= T_EDIT && t < T_COMMIT) cp = code.caret(k);
+                const blinkOn = t < 5.9 || Math.floor((t - 5.9) / 0.5) % 2 === 0;
+                caret.style.opacity = cp && blinkOn ? "1" : "0";
+                if (cp) caret.style.transform = "translate(" + cp.x.toFixed(1) + "px," + cp.y.toFixed(1) + "px)";
+
+                const f = RG.seg(t, 5.95, 0.35, "power2.out") * (1 - RG.seg(t, 6.95, 0.3));
+                focus.style.opacity = f.toFixed(3);
+                focus.style.left = focusBox.x + "px";
+                focus.style.top = focusBox.y + "px";
+                focus.style.width = focusBox.w + "px";
+                focus.style.height = focusBox.h + "px";
+                focus.style.transform = f > 0 && f < 1 ? "scale(" + (1.06 - 0.06 * f).toFixed(3) + ")" : "";
+                const p = fx.press(t - T_COMMIT);
+                commit.style.transform = p ? "scale(" + (1 - 0.05 * p).toFixed(3) + ")" : "";
+              },
+            });
+          });
+        })();
+      </script>
+    </template>
+  </body>
+</html>

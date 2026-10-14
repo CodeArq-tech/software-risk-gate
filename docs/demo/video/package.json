@@ -1,0 +1,10 @@
+{
+  "name": "risk-gate-demo",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "npx --yes hyperframes@0.8.155 preview",
+    "check": "npx --yes hyperframes@0.8.155 check",
+    "render": "scripts/render.sh"
+  }
+}

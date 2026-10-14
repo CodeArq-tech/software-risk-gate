@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+  </head>
+  <body>
+    <template>
+      <style>
+        #root {
+          position: absolute;
+          inset: 0;
+          overflow: hidden;
+          background: linear-gradient(160deg, #f8fafc 0%, #eef2f9 55%, #f5f3fb 100%);
+        }
+        #backdrop-grid {
+          position: absolute;
+          inset: 0;
+          background-image: radial-gradient(rgba(15, 23, 42, 0.07) 1.4px, transparent 1.4px);
+          background-size: 34px 34px;
+        }
+        .backdrop-blob {
+          position: absolute;
+          width: 1100px;
+          height: 1100px;
+          border-radius: 50%;
+        }
+        #backdrop-b1 {
+          left: -380px;
+          top: -460px;
+          background: radial-gradient(closest-side, rgba(59, 130, 246, 0.2), rgba(59, 130, 246, 0));
+        }
+        #backdrop-b2 {
+          left: 1180px;
+          top: -380px;
+          background: radial-gradient(closest-side, rgba(20, 184, 166, 0.18), rgba(20, 184, 166, 0));
+        }
+        #backdrop-b3 {
+          left: -260px;
+          top: 520px;
+          background: radial-gradient(closest-side, rgba(245, 158, 11, 0.16), rgba(245, 158, 11, 0));
+        }
+        #backdrop-b4 {
+          left: 1120px;
+          top: 480px;
+          background: radial-gradient(closest-side, rgba(244, 63, 94, 0.15), rgba(244, 63, 94, 0));
+        }
+      </style>
+      <div data-hf-id="hf-b8hd" id="root" data-composition-id="backdrop" data-width="1920" data-height="1080">
+        <div data-hf-id="hf-tnj4" id="backdrop-grid"></div>
+        <div data-hf-id="hf-7l80" id="backdrop-b1" class="backdrop-blob"></div>
+        <div data-hf-id="hf-igpn" id="backdrop-b2" class="backdrop-blob"></div>
+        <div data-hf-id="hf-eilm" id="backdrop-b3" class="backdrop-blob"></div>
+        <div data-hf-id="hf-vqvx" id="backdrop-b4" class="backdrop-blob"></div>
+      </div>
+      <script>
+        (function () {
+          const tl = gsap.timeline({ paused: true });
+          tl.fromTo("#backdrop-b1", { x: 0, y: 0 }, { x: 260, y: 120, duration: 64, ease: "sine.inOut" }, 0);
+          tl.fromTo("#backdrop-b2", { x: 0, y: 0 }, { x: -220, y: 160, duration: 64, ease: "sine.inOut" }, 0);
+          tl.fromTo("#backdrop-b3", { x: 0, y: 0 }, { x: 240, y: -120, duration: 64, ease: "sine.inOut" }, 0);
+          tl.fromTo("#backdrop-b4", { x: 0, y: 0 }, { x: -260, y: -140, duration: 64, ease: "sine.inOut" }, 0);
+          tl.fromTo("#backdrop-grid", { opacity: 0.9 }, { opacity: 0.5, duration: 64, ease: "none" }, 0);
+          window.__timelines["backdrop"] = tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>

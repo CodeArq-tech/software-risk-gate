@@ -5,6 +5,7 @@ on:
     branches: [master]
     paths:
       - "site/**"
+      - "docs/demo/risk-gate-demo-*"
       - ".github/workflows/pages.yml"
   workflow_dispatch:
 

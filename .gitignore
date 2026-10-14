@@ -4,3 +4,10 @@
 /coverage/
 *.profraw
 *.profdata
+
+# Agent and tool state
+.ai-jail
+.claude-flow/
+.swarm/
+ruvector.db
+__pycache__/

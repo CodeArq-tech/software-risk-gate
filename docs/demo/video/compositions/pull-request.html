@@ -1,0 +1,362 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+  </head>
+  <body>
+    <template>
+      <style>
+        #root {
+          position: absolute;
+          inset: 0;
+        }
+        #pull-request-page .pq-head {
+          position: absolute;
+          left: 44px;
+          top: 24px;
+        }
+        .pq-h1 {
+          font-size: 32px;
+          font-weight: 400;
+        }
+        .pq-sub {
+          margin-top: 6px;
+          font-size: 18px;
+          color: var(--muted);
+        }
+        .pq-compare {
+          position: absolute;
+          left: 44px;
+          right: 44px;
+          top: 118px;
+          height: 62px;
+          border: 1px solid var(--border);
+          border-radius: 10px;
+          background: var(--subtle);
+          display: flex;
+          align-items: center;
+          gap: 14px;
+          padding: 0 18px;
+          font-size: 17px;
+        }
+        .pq-pill {
+          height: 38px;
+          padding: 0 14px;
+          border: 1px solid var(--border);
+          border-radius: 8px;
+          background: #fff;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }
+        .pq-pill b {
+          font-family: var(--mono);
+          font-weight: 500;
+          font-size: 16px;
+        }
+        .pq-ok {
+          color: var(--success);
+          font-weight: 600;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+        .pq-form {
+          position: absolute;
+          left: 44px;
+          top: 204px;
+          width: 760px;
+        }
+        .pq-label {
+          font-size: 17px;
+          font-weight: 600;
+          margin-bottom: 8px;
+        }
+        .pq-input {
+          height: 48px;
+          border: 1px solid var(--border);
+          border-radius: 8px;
+          padding: 0 14px;
+          display: flex;
+          align-items: center;
+          font-size: 19px;
+          background: var(--subtle);
+        }
+        .pq-desc {
+          margin-top: 18px;
+          border: 1px solid var(--border);
+          border-radius: 8px;
+          overflow: hidden;
+        }
+        .pq-desc-tabs {
+          height: 44px;
+          background: var(--subtle);
+          border-bottom: 1px solid var(--border);
+          display: flex;
+          align-items: flex-end;
+          gap: 4px;
+          padding: 0 8px;
+          font-size: 16px;
+        }
+        .pq-desc-tabs span {
+          height: 36px;
+          padding: 0 14px;
+          display: flex;
+          align-items: center;
+          color: var(--muted);
+        }
+        .pq-desc-tabs span.on {
+          background: #fff;
+          border: 1px solid var(--border);
+          border-bottom-color: #fff;
+          border-radius: 6px 6px 0 0;
+          margin-bottom: -1px;
+          color: var(--fg);
+          font-weight: 500;
+        }
+        .pq-area {
+          height: 128px;
+          padding: 14px;
+          font-size: 18px;
+          position: relative;
+        }
+        .pq-area.focus,
+        .pq-input.focus {
+          box-shadow: inset 0 0 0 2px var(--accent);
+        }
+        .pq-area .ph {
+          position: absolute;
+          left: 14px;
+          top: 14px;
+          color: #8c959f;
+        }
+        .pq-actions {
+          margin-top: 18px;
+          display: flex;
+          justify-content: flex-end;
+        }
+        .pq-diff {
+          position: absolute;
+          left: 828px;
+          right: 44px;
+          top: 204px;
+          border: 1px solid var(--border);
+          border-radius: 10px;
+          overflow: hidden;
+          font-family: var(--mono);
+          font-size: 14.5px;
+        }
+        .pq-diff-head {
+          height: 46px;
+          background: var(--subtle);
+          border-bottom: 1px solid var(--border);
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 0 14px;
+          font-size: 15px;
+        }
+        .pq-diff-head .add {
+          color: var(--success);
+          font-weight: 700;
+        }
+        .pq-diff-head .del {
+          color: var(--danger);
+          font-weight: 700;
+        }
+        .pq-dl {
+          display: flex;
+          height: 26px;
+          line-height: 26px;
+          white-space: pre;
+        }
+        .pq-dl .ln {
+          width: 40px;
+          flex: none;
+          text-align: right;
+          padding-right: 8px;
+          color: #8c959f;
+        }
+        .pq-dl .tx {
+          padding-left: 10px;
+        }
+        .pq-dl.hunk {
+          background: #ddf4ff;
+          color: var(--muted);
+        }
+        .pq-dl.del {
+          background: #ffebe9;
+        }
+        .pq-dl.add {
+          background: #e6ffec;
+        }
+        .tk-kw {
+          color: #cf222e;
+        }
+        .tk-fn {
+          color: #8250df;
+        }
+      </style>
+      <div id="root" data-composition-id="pull-request" data-width="1920" data-height="1080">
+        <div class="rg-stage" id="pull-request-stage">
+          <div class="rg-cam" id="pull-request-cam">
+            <div class="win" id="pull-request-win">
+              <div class="gh-page" id="pull-request-page">
+                <div class="pq-head">
+                  <div class="pq-h1">Open a pull request</div>
+                  <div class="pq-sub">Create a new pull request by comparing changes across two branches.</div>
+                </div>
+                <div class="pq-compare">
+                  <div class="pq-pill">base: <b>main</b></div>
+                  <span style="color: var(--muted)">←</span>
+                  <div class="pq-pill">compare: <b>speed-up-checkout</b></div>
+                  <div class="pq-ok" id="pull-request-ok"></div>
+                  <span style="color: var(--muted)">These branches can be automatically merged.</span>
+                </div>
+                <div class="pq-form">
+                  <div class="pq-label">Add a title</div>
+                  <div class="pq-input" id="pull-request-title">Speed up checkout totals</div>
+                  <div class="pq-desc">
+                    <div class="pq-desc-tabs"><span class="on">Write</span><span>Preview</span></div>
+                    <div class="pq-area" id="pull-request-area">
+                      <span class="ph" id="pull-request-ph">Add your description here...</span>
+                      <span id="pull-request-text">Replace the manual loop with reduce.</span>
+                    </div>
+                  </div>
+                  <div class="pq-actions"><div class="btn primary" id="pull-request-create">Create pull request</div></div>
+                </div>
+                <div class="pq-diff" id="pull-request-diff">
+                  <div class="pq-diff-head" id="pull-request-diffhead"></div>
+                  <div id="pull-request-lines"></div>
+                </div>
+              </div>
+            </div>
+            <div class="caret" id="pull-request-caret"></div>
+            <div class="rg-focus" id="pull-request-focus-a"></div>
+            <div class="rg-focus" id="pull-request-focus-b"></div>
+          </div>
+        </div>
+      </div>
+      <script>
+        (function () {
+          const DIFF = [
+            ["hunk", "", "", "@@ -1,9 +1,6 @@"],
+            ["ctx", "1", "1", 'import { chargeCard } from "../payment/charge";'],
+            ["ctx", "2", "2", ""],
+            ["ctx", "3", "3", "export function checkout(items: number[], token: string): boolean {"],
+            ["del", "4", "", "-  let total = 0;"],
+            ["del", "5", "", "-  for (const item of items) {"],
+            ["del", "6", "", "-    total += item;"],
+            ["del", "7", "", "-  }"],
+            ["add", "", "4", "+  const total = items.reduce((sum, item) => sum + item, 0);"],
+            ["ctx", "8", "5", "   return chargeCard(total, token);"],
+            ["ctx", "9", "6", " }"],
+          ];
+          function ts(src) {
+            const esc = src.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            return esc
+              .replace(/("[^"]*")/g, '<span class="tk-str">$1</span>')
+              .replace(/\b(import|from|export|function|const|let|for|of|return|boolean|number|string)\b/g, '<span class="tk-kw">$1</span>')
+              .replace(/\b(chargeCard|checkout|reduce)\b(?=\()/g, '<span class="tk-fn">$1</span>');
+          }
+
+          RG.mount("pull-request", 7, function () {
+            const stage = document.getElementById("pull-request-stage");
+            const cam = document.getElementById("pull-request-cam");
+            const win = document.getElementById("pull-request-win");
+            const page = document.getElementById("pull-request-page");
+            RG.chrome(win, { path: "/acme/storefront/compare/main...speed-up-checkout", tab: "Pull requests", prs: "2" });
+            document.getElementById("pull-request-ok").innerHTML = RG.icon("check") + "Able to merge.";
+            document.getElementById("pull-request-diffhead").innerHTML =
+              RG.icon("chevron") + "<b>src/api/checkout.ts</b><span class='add'>+1</span><span class='del'>−4</span>";
+            const linesEl = document.getElementById("pull-request-lines");
+            linesEl.innerHTML = DIFF.map(function (d) {
+              const kind = d[0];
+              const body = kind === "hunk" ? d[3] : ts(d[3]);
+              return '<div class="pq-dl ' + kind + '"><span class="ln">' + d[1] + '</span><span class="ln">' + d[2] + '</span><span class="tx">' + body + "</span></div>";
+            }).join("");
+            const rows = linesEl.querySelectorAll(".pq-dl");
+            const area = document.getElementById("pull-request-area");
+            const ph = document.getElementById("pull-request-ph");
+            const text = RG.typer(document.getElementById("pull-request-text"), stage);
+            const caret = document.getElementById("pull-request-caret");
+            const create = document.getElementById("pull-request-create");
+            const focusA = document.getElementById("pull-request-focus-a");
+            const focusB = document.getElementById("pull-request-focus-b");
+            const diff = document.getElementById("pull-request-diff");
+
+            const T_AREA = 0.95;
+            const T_CREATE = 5.75;
+            const textAt = RG.schedule([{ at: 1.1, dur: 1.15, to: text.count }]);
+            let boxA = null;
+            let boxB = null;
+            function rowsBox(a, b) {
+              const ra = RG.box(rows[a], stage);
+              const rb = RG.box(rows[b], stage);
+              return { x: ra.x + 2, y: ra.y - 2, w: ra.w - 4, h: rb.y + rb.h - ra.y + 4 };
+            }
+
+            return RG.scene({
+              stage: stage,
+              cam: cam,
+              duration: 7,
+              measure: function () {
+                const ok = text.measure();
+                boxA = rowsBox(1, 1);
+                boxB = rowsBox(4, 8);
+                return ok;
+              },
+              cursorStart: { x: 1619, y: 278 },
+              moves: [
+                { at: 0.3, dur: 0.6, to: { el: area, ax: 0.3, ay: 0.4 } },
+                { at: 2.45, dur: 0.6, to: { el: rows[1], ax: 0.62, ay: 0.6 } },
+                { at: 4.75, dur: 0.85, to: { el: create, ax: 0.5, ay: 0.55 } },
+              ],
+              clicks: [T_AREA, T_CREATE],
+              camera: [
+                { t: 0, z: 1, x: 960, y: 540 },
+                { t: 0.4, z: 1, at: { el: area, ax: 0.4, ay: 0.4 } },
+                { t: 1.05, z: 1.55, at: { el: area, ax: 0.4, ay: 0.4 } },
+                { t: 2.3, z: 1.55, at: { el: area, ax: 0.45, ay: 0.4 } },
+                { t: 3.05, z: 1.6, at: { el: diff, ax: 0.5, ay: 0.45 } },
+                { t: 4.6, z: 1.6, at: { el: diff, ax: 0.5, ay: 0.45 } },
+                { t: 5.3, z: 1.2, at: { el: create, ax: 0.2, ay: 0.3 } },
+                { t: 6.3, z: 1.2, at: { el: create, ax: 0.2, ay: 0.3 } },
+                { t: 6.95, z: 1, x: 960, y: 540 },
+              ],
+              render: function (t, fx) {
+                page.style.opacity = RG.seg(t, 0, 0.25).toFixed(3);
+                const k = textAt(t);
+                text.set(k);
+                ph.style.visibility = k >= 1 ? "hidden" : "";
+                area.classList.toggle("focus", t >= T_AREA && t < T_CREATE);
+                const typing = t >= T_AREA && t < 4.0;
+                const blinkOn = t < 2.25 || Math.floor((t - 2.25) / 0.5) % 2 === 0;
+                caret.style.opacity = typing && blinkOn ? "1" : "0";
+                if (typing) {
+                  const cp = text.caret(k);
+                  caret.style.transform = "translate(" + cp.x.toFixed(1) + "px," + (cp.y + 2).toFixed(1) + "px)";
+                }
+                const fa = RG.seg(t, 3.15, 0.35, "power2.out") * (1 - RG.seg(t, 4.55, 0.3));
+                const fb = RG.seg(t, 3.6, 0.35, "power2.out") * (1 - RG.seg(t, 4.55, 0.3));
+                [
+                  [focusA, boxA, fa],
+                  [focusB, boxB, fb],
+                ].forEach(function (f) {
+                  f[0].style.opacity = f[2].toFixed(3);
+                  f[0].style.left = f[1].x + "px";
+                  f[0].style.top = f[1].y + "px";
+                  f[0].style.width = f[1].w + "px";
+                  f[0].style.height = f[1].h + "px";
+                });
+                const p = fx.press(t - T_CREATE);
+                create.style.transform = p ? "scale(" + (1 - 0.05 * p).toFixed(3) + ")" : "";
+                create.style.filter = t >= T_CREATE + 0.1 ? "saturate(0.6) brightness(1.1)" : "";
+              },
+            });
+          });
+        })();
+      </script>
+    </template>
+  </body>
+</html>

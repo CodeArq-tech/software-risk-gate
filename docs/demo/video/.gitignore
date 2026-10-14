@@ -1,0 +1,11 @@
+# HyperFrames and tool caches
+.hyperframes/
+.waveform-cache/
+renders/
+node_modules/
+# Agent tooling state
+.claude-flow/
+.swarm/
+ruvector.db
+# Intermediate audio; the encoded .m4a files are committed
+assets/audio/*.wav
