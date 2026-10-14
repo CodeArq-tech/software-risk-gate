@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101716">
+  <meta name="description" content="Risk Gate makes the impact of every pull request visible and applies validation gates that match its risk.">
+  <title>Risk Gate — ship with impact in view</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/styles.css">
+  <script src="assets/app.js" defer></script>
+</head>
+<body>
+  <div class="grain" aria-hidden="true"></div>
+  <header class="topbar wrap">
+    <a class="brand" href="#top" aria-label="Risk Gate home"><span class="brand-mark"><i></i><i></i><i></i></span><span>risk<span class="brand-light">gate</span></span></a>
+    <nav class="nav-links" aria-label="Main navigation"><a href="#how" data-i18n="navHow">How it works</a><a href="#teams" data-i18n="navTeams">For your team</a><a href="#quickstart" data-i18n="navQuick">Quick start</a></nav>
+    <div class="nav-actions"><label class="sr-only" for="language" data-i18n="languageLabel">Choose language</label><select id="language"><option value="en">EN</option><option value="pt">PT</option><option value="es">ES</option><option value="ja">日本語</option><option value="zh">中文</option></select><a class="nav-cta" href="https://github.com/CodeArq-tech/software-risk-gate" target="_blank" rel="noreferrer"><span data-i18n="navGithub">View on GitHub</span><span aria-hidden="true">↗</span></a></div>
+  </header>
+
+  <main id="top">
+    <section class="hero wrap">
+      <div class="hero-copy">
+        <div class="eyebrow"><span class="pulse"></span><span data-i18n="eyebrow">OPEN SOURCE · GITHUB ACTION</span></div>
+        <h1 data-i18n="headline">Ship with<br><em>impact in view.</em></h1>
+        <p class="hero-sub" data-i18n="subhead">Risk Gate maps what changed to what matters. Then it runs the checks that change deserves, before it reaches production.</p>
+        <div class="hero-actions"><a class="button button-primary" href="#quickstart"><span data-i18n="ctaStart">Add to your workflow</span><span>↗</span></a><a class="button button-quiet" href="#how"><span class="play-icon">▶</span><span data-i18n="ctaHow">See how it works</span></a></div>
+        <div class="hero-meta"><span><b class="meta-dot"></b><span data-i18n="metaRust">Built in Rust</span></span><span><b class="meta-dot"></b><span data-i18n="metaOpen">Open source</span></span><span><b class="meta-dot"></b><span data-i18n="metaRepo">Runs in your GitHub Actions</span></span></div>
+      </div>
+      <div class="hero-visual" aria-label="Risk Gate animated CI/CD overview with pull request analysis and team review">
+        <video class="hero-video" autoplay muted loop playsinline controls preload="metadata" poster="assets/risk-gate-hero-poster.jpg" aria-label="Animated illustration of a pull request flowing through impact analysis, risk matched checks, and Product and Support review.">
+          <source src="assets/risk-gate-hero.mp4" type="video/mp4">
+          <span data-i18n="videoFallback">Your browser does not support embedded video.</span>
+        </video>
+        <div class="video-top"><span class="window-dots"><i></i><i></i><i></i></span><span class="visual-label" data-i18n="visualTitle">PULL REQUEST · #284</span><span class="live-tag"><b></b><span data-i18n="live">LIVE FLOW</span></span></div>
+        <span class="float-chip chip-one"><span>✳</span> <span data-i18n="chipAst">Full-project AST</span></span><span class="float-chip chip-two"><span>⌁</span> <span data-i18n="chipEvidence">Auditable evidence</span></span>
+        <div class="video-caption"><span class="foot-check">✓</span><span data-i18n="visualFoot">Checks scale with impact. Every decision has a reason.</span></div>
+      </div>
+      <div class="hero-scroll"><span></span><span data-i18n="scroll">SCROLL TO EXPLORE</span></div>
+    </section>
+
+    <section class="trust-strip"><div class="wrap trust-inner"><span data-i18n="trustLabel">BUILT FOR THE WAY TEAMS SHIP</span><div class="trust-items"><span><b>01</b> <span data-i18n="trustOne">PR-aware</span></span><span><b>02</b> <span data-i18n="trustTwo">Risk-proportional</span></span><span><b>03</b> <span data-i18n="trustThree">Explainable by design</span></span><span><b>04</b> <span data-i18n="trustFour">Runs where you work</span></span></div></div></section>
+
+    <section class="section wrap" id="how">
+      <div class="section-heading"><div><div class="eyebrow"><span class="eyebrow-num">01</span><span data-i18n="howEyebrow">FROM DIFF TO DECISION</span></div><h2 data-i18n="howTitle">Every change has<br><em>a different blast radius.</em></h2></div><p data-i18n="howIntro">A typo and a payment-flow rewrite should not face the same gate. Risk Gate traces impact through your project, then makes the next step clear.</p></div>
+      <div class="steps-grid">
+        <article class="step-card"><div class="card-index">01 <span>—</span> <span data-i18n="stepOneTag">UNDERSTAND</span></div><div class="card-art graph-art"><div class="graph-node node-a">PR</div><div class="graph-link link-a"></div><div class="graph-node node-b">API</div><div class="graph-link link-b"></div><div class="graph-node node-c">PAY</div><div class="graph-node node-d">DB</div><div class="graph-link link-c"></div><span class="graph-orbit"></span></div><h3 data-i18n="stepOneTitle">Trace the change</h3><p data-i18n="stepOneText">Connect changed files to modules and dependencies across the full supported project AST.</p></article>
+        <article class="step-card"><div class="card-index">02 <span>—</span> <span data-i18n="stepTwoTag">ASSESS</span></div><div class="card-art bars-art"><div class="bar-row"><span>ui/</span><i style="--w:22%"></i><b>LOW</b></div><div class="bar-row"><span>api/</span><i style="--w:55%"></i><b>NORMAL</b></div><div class="bar-row bar-highlight"><span>pay/</span><i style="--w:88%"></i><b>HIGH</b></div><div class="bar-row"><span>db/</span><i style="--w:100%"></i><b>DANGER</b></div><div class="bar-axis"><span>PATH → IMPACT</span><span>MAX</span></div></div><h3 data-i18n="stepTwoTitle">Make risk legible</h3><p data-i18n="stepTwoText">See the affected paths, risk level, and dependency chain behind every recommendation.</p></article>
+        <article class="step-card"><div class="card-index">03 <span>—</span> <span data-i18n="stepThreeTag">RESPOND</span></div><div class="card-art gate-art"><div class="gate-track"><i></i><i></i><i></i><span></span></div><div class="gate-label gate-left" data-i18n="gateChecks">CHECKS</div><div class="gate-label gate-right" data-i18n="gateReview">REVIEW</div><div class="gate-core">✓</div><div class="gate-caption" data-i18n="gatePassed">POLICY MATCHED</div></div><h3 data-i18n="stepThreeTitle">Gate what matters</h3><p data-i18n="stepThreeText">Run configured validations and require approvals in proportion to the risk.</p></article>
+      </div>
+      <div class="flow-caption"><span class="flow-rule"></span><span data-i18n="flowCaption">ANALYZE → EXPLAIN → VALIDATE → REPORT</span><span class="flow-rule"></span></div>
+    </section>
+
+    <section class="team-section" id="teams"><div class="wrap team-layout"><div class="team-copy"><div class="eyebrow"><span class="eyebrow-num">02</span><span data-i18n="teamsEyebrow">ONE DECISION, SHARED CONTEXT</span></div><h2 data-i18n="teamsTitle">Engineering sees<br>the graph.<br><em>Teams see the why.</em></h2><p data-i18n="teamsText">A pull request report gives Engineering evidence to act on, Product a clear view of customer-facing impact, and Support the context to prepare. No one has to decode a green checkmark.</p><a class="text-link" href="https://github.com/CodeArq-tech/software-risk-gate#how-the-analysis-works" target="_blank" rel="noreferrer"><span data-i18n="teamsLink">Explore the analysis</span><span>↗</span></a></div><div class="team-board"><div class="board-header"><span class="board-tag"><i></i><span data-i18n="boardTitle">SHARED RELEASE CONTEXT</span></span><span class="board-id">RG / 284</span></div><div class="board-change"><div class="change-icon">⌘</div><div><small data-i18n="changeLabel">CHANGE</small><strong data-i18n="changeTitle">Checkout retry logic</strong><span class="change-path">src/checkout/retry.rs</span></div><span class="change-risk" data-i18n="changeHigh">HIGH</span></div><div class="impact-path"><span data-i18n="impactLabel">IMPACT PATH</span><div class="path-chips"><span>checkout</span><b>→</b><span>payment API</span><b>→</b><span class="path-warn">customer billing</span></div></div><div class="board-divider"></div><div class="team-rows"><div class="team-row"><div class="team-avatar av-eng">E</div><div><strong data-i18n="roleEng">Engineering</strong><small data-i18n="roleEngSub">E2E + mutation checks required</small></div><span class="team-status status-running"><i></i><span data-i18n="statusRunning">Validating</span></span></div><div class="team-row"><div class="team-avatar av-prod">P</div><div><strong data-i18n="roleProduct">Product</strong><small data-i18n="roleProductSub">Customer impact is visible</small></div><span class="team-status status-ready">✓ <span data-i18n="statusReady">Informed</span></span></div><div class="team-row"><div class="team-avatar av-sup">S</div><div><strong data-i18n="roleSupport">Support</strong><small data-i18n="roleSupportSub">Release context is ready</small></div><span class="team-status status-ready">✓ <span data-i18n="statusReady">Informed</span></span></div></div><div class="board-footer"><span class="foot-lock">◉</span><span data-i18n="boardFoot">Evidence stays attached to the pull request.</span></div><span class="board-orbit orbit-a"></span><span class="board-orbit orbit-b"></span></div></div></section>
+
+    <section class="quickstart-section wrap" id="quickstart"><div class="quickstart-copy"><div class="eyebrow"><span class="eyebrow-num">03</span><span data-i18n="startEyebrow">A SMALL STEP IN YOUR WORKFLOW</span></div><h2 data-i18n="startTitle">Bring risk into<br><em>the pull request.</em></h2><p data-i18n="startText">Add a workflow, define your repository's risk map, and let your team tune the gates to fit how you ship.</p><a class="button button-primary" href="https://github.com/CodeArq-tech/software-risk-gate" target="_blank" rel="noreferrer"><span data-i18n="startGithub">Get started on GitHub</span><span>↗</span></a><div class="start-note"><span>⌁</span><span data-i18n="startNote">Open source · Runs in your workflow · Your rules, your repository</span></div></div><div class="code-window"><div class="code-top"><span class="window-dots"><i></i><i></i><i></i></span><span>risk-gate.yml</span><span class="code-copy" id="copy-code" role="button" tabindex="0" data-i18n="copy">COPY</span></div><pre><code><span class="code-muted"># .github/workflows/risk-gate.yml</span>
+<span class="code-key">name</span>: <span class="code-val">Risk Gate</span>
+<span class="code-key">on</span>:
+  <span class="code-key">pull_request</span>:
+    <span class="code-key">types</span>: [opened, synchronize, reopened]
+<span class="code-key">permissions</span>:
+  <span class="code-key">contents</span>: <span class="code-val">read</span>
+  <span class="code-key">pull-requests</span>: <span class="code-val">read</span>
+  <span class="code-key">issues</span>: <span class="code-val">write</span>
+<span class="code-key">jobs</span>:
+  <span class="code-key">risk-gate</span>:
+    <span class="code-key">runs-on</span>: <span class="code-val">ubuntu-latest</span>
+    <span class="code-key">steps</span>:
+      - <span class="code-key">uses</span>: <span class="code-val">actions/checkout@v4</span>
+        <span class="code-key">with</span>:
+          <span class="code-key">fetch-depth</span>: <span class="code-num">0</span>
+      - <span class="code-key">uses</span>: <span class="code-val">CodeArq-tech/software-risk-gate@v0.1.9</span>
+        <span class="code-key">with</span>:
+          <span class="code-key">token</span>: <span class="code-expr">${{ secrets.GITHUB_TOKEN }}</span></code></pre><div class="code-bottom"><span class="code-status"><i></i><span data-i18n="codeReady">Ready for your next pull request</span></span><span class="code-lang">YAML</span></div><div class="code-toast" id="copy-toast" role="status" data-i18n="copied">Copied</div></div></section>
+
+    <section class="closing wrap"><span class="closing-mark"><i></i><i></i><i></i></span><p data-i18n="closing">Make the risk visible.<br>Make the next step clear.</p><a href="https://github.com/CodeArq-tech/software-risk-gate" target="_blank" rel="noreferrer" aria-label="Risk Gate on GitHub">↗</a></section>
+  </main>
+  <footer class="footer wrap"><a class="brand brand-small" href="#top"><span class="brand-mark"><i></i><i></i><i></i></span><span>risk<span class="brand-light">gate</span></span></a><span data-i18n="footer">Open source, built for teams that ship.</span><a href="https://github.com/CodeArq-tech/software-risk-gate" target="_blank" rel="noreferrer">GitHub ↗</a><span class="footer-copy">© 2026 CodeArq.tech</span></footer>
+</body>
+</html>
