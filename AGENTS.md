@@ -37,9 +37,11 @@ versioned with the analyzed project in .risk-gate.yaml.
 10. Before declaring an integration complete, prove the real path: PR event,
     configuration loading, diff, analysis, gate execution, comment, and Action
     exit code.
-11. All documentation, comments, CLI messages, reports, examples, and other
-    user-facing project text must be written in English. Preserve exact
-    identifiers, YAML keys, API fields, exit codes, and code literals.
+11. Write documentation, comments, CLI messages, reports, examples, and other
+    user-facing project text in English, except for the marketing site in site/,
+    which must support English, Portuguese, Spanish, Japanese, and Chinese.
+    Preserve exact identifiers, YAML keys, API fields, exit codes, and code
+    literals.
 
 ## AST and language model
 
