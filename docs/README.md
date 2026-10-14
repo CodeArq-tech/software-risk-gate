@@ -73,4 +73,5 @@ cargo run -- --ast-impact --root /path/to/repository +  --repository owner/repos
 ~~~
 
 The implementation plan is in implementation-plan.md. Quality commands and
-coverage/mutation requirements are in quality.md.
+coverage/mutation requirements are in quality.md. Demo videos in English,
+Portuguese, and Spanish, with their HyperFrames source, are in demo/.

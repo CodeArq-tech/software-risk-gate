@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+  </head>
+  <body>
+    <template>
+      <style>
+        #root {
+          position: absolute;
+          inset: 0;
+          font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+          color: #0f172a;
+        }
+        #intro-group {
+          position: absolute;
+          inset: 0;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 0;
+        }
+        #intro-logo {
+          width: 150px;
+          height: 150px;
+          display: block;
+        }
+        #intro-word {
+          margin-top: 30px;
+          font-size: 96px;
+          font-weight: 700;
+          letter-spacing: -0.035em;
+          line-height: 1;
+        }
+        #intro-tag {
+          margin-top: 26px;
+          font-size: 46px;
+          font-weight: 500;
+          letter-spacing: -0.02em;
+          display: flex;
+          gap: 0.28em;
+        }
+        #intro-tag span {
+          display: inline-block;
+        }
+        #intro-sub {
+          margin-top: 18px;
+          font-size: 27px;
+          color: #475569;
+          max-width: 1200px;
+          text-align: center;
+        }
+        #intro-chips {
+          margin-top: 38px;
+          display: flex;
+          gap: 14px;
+        }
+        .intro-chip {
+          height: 48px;
+          padding: 0 22px;
+          border-radius: 24px;
+          background: #ffffff;
+          box-shadow:
+            0 6px 16px -6px rgba(15, 23, 42, 0.18),
+            0 0 0 1px rgba(15, 23, 42, 0.07);
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          font-size: 21px;
+          font-weight: 500;
+          color: #1e293b;
+        }
+        .intro-dot {
+          width: 10px;
+          height: 10px;
+          border-radius: 50%;
+          display: block;
+        }
+      </style>
+      <div data-hf-id="hf-ypfn" id="root" data-composition-id="intro" data-width="1920" data-height="1080">
+        <div data-hf-id="hf-1pj3" id="intro-group">
+          <svg data-hf-id="hf-tn04" id="intro-logo" viewBox="0 0 120 120" aria-hidden="true">
+            <rect data-hf-id="hf-306g" x="0" y="0" width="120" height="120" rx="30" fill="#0f172a" />
+            <rect data-hf-id="hf-vf47" class="intro-bar" x="20" y="72" width="12" height="28" rx="4" fill="#14b8a6" />
+            <rect data-hf-id="hf-0u1z" class="intro-bar" x="38" y="62" width="12" height="38" rx="4" fill="#3b82f6" />
+            <rect data-hf-id="hf-rzh0" class="intro-bar" x="56" y="50" width="12" height="50" rx="4" fill="#f59e0b" />
+            <rect data-hf-id="hf-b78m" class="intro-bar" x="74" y="38" width="12" height="62" rx="4" fill="#f97316" />
+            <rect data-hf-id="hf-vjvh" class="intro-bar" x="92" y="24" width="12" height="76" rx="4" fill="#f43f5e" />
+            <line data-hf-id="hf-36yk" id="intro-gate" x1="14" y1="56" x2="106" y2="56" stroke="#ffffff" stroke-width="4" stroke-linecap="round" stroke-dasharray="92" stroke-dashoffset="92" />
+          </svg>
+          <div data-hf-id="hf-9gz8" id="intro-word">Risk Gate</div>
+          <div data-hf-id="hf-w3ha" id="intro-tag"></div>
+          <div data-hf-id="hf-dj51" id="intro-sub" data-i18n="intro_sub"></div>
+          <div data-hf-id="hf-t12b" id="intro-chips">
+            <div data-hf-id="hf-s5nh" class="intro-chip"><span data-hf-id="hf-6qyn" class="intro-dot" style="background: #3b82f6"></span><span data-hf-id="hf-g28h" data-i18n="chip_action"></span></div>
+            <div data-hf-id="hf-cbsh" class="intro-chip"><span data-hf-id="hf-o8bm" class="intro-dot" style="background: #f97316"></span><span data-hf-id="hf-6xu1" data-i18n="chip_rust"></span></div>
+            <div data-hf-id="hf-dipk" class="intro-chip"><span data-hf-id="hf-e7hq" class="intro-dot" style="background: #14b8a6"></span><span data-hf-id="hf-pxcy" data-i18n="chip_langs"></span></div>
+          </div>
+        </div>
+      </div>
+      <script>
+        (function () {
+          const root = document.querySelector('[data-composition-id="intro"]');
+          RG.applyText(root);
+          const tag = root.querySelector("#intro-tag");
+          RG.t("intro_tag")
+            .split(" ")
+            .forEach((word) => {
+              const s = document.createElement("span");
+              s.textContent = word;
+              tag.appendChild(s);
+            });
+
+          const tl = gsap.timeline({ paused: true });
+          tl.fromTo("#intro-logo", { scale: 0.6, opacity: 0, rotation: -8 }, { scale: 1, opacity: 1, rotation: 0, duration: 0.8, ease: "back.out(1.6)" }, 0.15);
+          tl.fromTo(".intro-bar", { scaleY: 0, transformOrigin: "50% 100%" }, { scaleY: 1, duration: 0.5, ease: "power3.out", stagger: 0.08 }, 0.35);
+          tl.fromTo("#intro-gate", { strokeDashoffset: 92 }, { strokeDashoffset: 0, duration: 0.45, ease: "power2.inOut" }, 0.95);
+          tl.fromTo("#intro-word", { y: 26, opacity: 0 }, { y: 0, opacity: 1, duration: 0.6, ease: "power3.out" }, 0.65);
+          tl.fromTo("#intro-tag span", { y: 22, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: "power3.out", stagger: 0.07 }, 1.2);
+          tl.fromTo("#intro-sub", { y: 14, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: "power2.out" }, 1.8);
+          tl.fromTo(".intro-chip", { y: 16, scale: 0.92, opacity: 0 }, { y: 0, scale: 1, opacity: 1, duration: 0.45, ease: "back.out(1.8)", stagger: 0.1 }, 2.2);
+          tl.to("#intro-group", { y: -40, opacity: 0, duration: 0.55, ease: "power2.in" }, 3.65);
+          window.__timelines["intro"] = tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>

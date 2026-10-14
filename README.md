@@ -8,6 +8,17 @@ idempotent report comment.
 It does not replace technical review. It makes likely impact explicit and
 applies a policy proportional to the affected area's criticality.
 
+## Demo
+
+[![Risk Gate demo: a pull request that reaches payments is blocked until its validations pass](docs/demo/risk-gate-demo-en.jpg)](docs/demo/risk-gate-demo-en.mp4)
+
+Watch the 64-second demo ([MP4](docs/demo/risk-gate-demo-en.mp4)): configure
+`.risk-gate.yaml`, add the Action, open a pull request, and follow the report
+from cascade impact to merge. Also available in
+[Português (Brasil)](docs/demo/risk-gate-demo-pt-BR.mp4) and
+[Español](docs/demo/risk-gate-demo-es.mp4). See [docs/demo](docs/demo/README.md)
+for how the video was made and how to re-render it.
+
 ## How the analysis works
 
 For a PR execution, Risk Gate:
