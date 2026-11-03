@@ -226,7 +226,9 @@ impl GithubApi {
             if RiskLevel::from_label_name(&label.name).is_some_and(|level| level != risk) {
                 let url = self.endpoint(&format!(
                     "/repos/{}/issues/{}/labels/{}",
-                    self.repository, self.pull_number, encode_path_segment(&label.name)
+                    self.repository,
+                    self.pull_number,
+                    encode_path_segment(&label.name)
                 ));
                 let _: Vec<Label> = self.send(self.client.delete(url))?;
                 removed.push(label.name);
@@ -250,7 +252,8 @@ impl GithubApi {
         let name = risk.label_name();
         let label_url = self.endpoint(&format!(
             "/repos/{}/labels/{}",
-            self.repository, encode_path_segment(&name)
+            self.repository,
+            encode_path_segment(&name)
         ));
         let definition = LabelDefinition {
             name: name.clone(),
@@ -717,10 +720,14 @@ mod tests {
             .create();
         let add = server
             .mock("POST", "/repos/o/r/issues/1/labels")
-            .match_body(mockito::Matcher::Json(serde_json::json!({"labels": ["risk: danger"]})))
+            .match_body(mockito::Matcher::Json(
+                serde_json::json!({"labels": ["risk: danger"]}),
+            ))
             .with_status(200)
             .with_header("content-type", "application/json")
-            .with_body(r#"[{"name":"bug","color":"ffffff"},{"name":"risk: danger","color":"b91c1c"}]"#)
+            .with_body(
+                r#"[{"name":"bug","color":"ffffff"},{"name":"risk: danger","color":"b91c1c"}]"#,
+            )
             .create();
         let api = GithubApi::new("token", "o/r", 1)
             .unwrap()
@@ -752,7 +759,9 @@ mod tests {
             .create();
         let recolor = server
             .mock("PATCH", "/repos/o/r/labels/risk%3A%20high")
-            .match_body(mockito::Matcher::PartialJson(serde_json::json!({"color": "c2410c"})))
+            .match_body(mockito::Matcher::PartialJson(
+                serde_json::json!({"color": "c2410c"}),
+            ))
             .with_status(200)
             .with_header("content-type", "application/json")
             .with_body(r#"{"name":"risk: high","color":"c2410c"}"#)
@@ -810,7 +819,12 @@ mod tests {
         let api = GithubApi::new("token", "o/r", 1)
             .unwrap()
             .with_base_url(same_color.url());
-        assert!(api.sync_risk_label(RiskLevel::Minimal).unwrap().removed.is_empty());
+        assert!(
+            api.sync_risk_label(RiskLevel::Minimal)
+                .unwrap()
+                .removed
+                .is_empty()
+        );
         same_lookup.assert();
         no_patch.assert();
         same_current.assert();

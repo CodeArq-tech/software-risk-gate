@@ -173,7 +173,9 @@ fn cli_runs_github_mode_and_writes_outputs() {
         .create();
     let add_label = server
         .mock("POST", "/repos/o/r/issues/1/labels")
-        .match_body(mockito::Matcher::Json(serde_json::json!({"labels": ["risk: high"]})))
+        .match_body(mockito::Matcher::Json(
+            serde_json::json!({"labels": ["risk: high"]}),
+        ))
         .with_status(200)
         .with_header("content-type", "application/json")
         .with_body(r#"[{"name":"risk: high","color":"c2410c"}]"#)
