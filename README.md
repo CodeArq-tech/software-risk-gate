@@ -115,7 +115,27 @@ SHA-256 checksum. The version input selects another published release:
     version: v0.1.0
 ~~~
 
-Action outputs are risk, status, merge_blocked, and report_url.
+Action outputs are risk, status, merge_blocked, report_url, and risk_label.
+
+### Risk label
+
+After publishing the report, the Action labels the pull request with its final
+risk so it is visible in pull-request lists and filters:
+
+| Risk    | Label           | Color     |
+|---------|-----------------|-----------|
+| minimal | `risk: minimal` | `#15803d` |
+| low     | `risk: low`     | `#1d4ed8` |
+| normal  | `risk: normal`  | `#b45309` |
+| high    | `risk: high`    | `#c2410c` |
+| danger  | `risk: danger`  | `#b91c1c` |
+
+Missing repository labels are created with these colors, and a recolored label
+is restored. Labels for other risk levels are removed, so a pull request whose
+risk changes between pushes carries only the current one. Set
+`riskLabels: false` in .risk-gate.yaml to disable labeling. The label uses the
+same issues: write permission as the report comment; a labeling failure fails
+the run.
 
 ## .risk-gate.yaml
 
@@ -171,6 +191,8 @@ limits:
   maxFiles: 10000
   maxAstNodes: 1000000
   maxCommentBytes: 60000
+
+riskLabels: true                   # optional: label the PR with risk: <level>
 ~~~
 
 Risk levels are ordered:

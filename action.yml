@@ -17,7 +17,7 @@ inputs:
   version:
     description: Released risk-gate version to download
     required: false
-    default: v0.1.9
+    default: v0.1.10
 outputs:
   risk:
     description: Final risk level
@@ -31,6 +31,9 @@ outputs:
   report_url:
     description: URL of the created or updated report comment
     value: ${{ steps.risk-gate.outputs.report_url }}
+  risk_label:
+    description: Risk label applied to the pull request, when riskLabels is enabled
+    value: ${{ steps.risk-gate.outputs.risk_label }}
 runs:
   using: composite
   steps:

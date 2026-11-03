@@ -62,6 +62,12 @@ pub struct Config {
     pub approval_groups: BTreeMap<String, ApprovalGroup>,
     #[serde(default)]
     pub limits: ResourceLimits,
+    #[serde(rename = "riskLabels", default = "default_risk_labels")]
+    pub risk_labels: bool,
+}
+
+fn default_risk_labels() -> bool {
+    true
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -344,6 +350,15 @@ approvalGroups:
         assert_eq!(config.ignore_paths, vec!["generated/"]);
         assert_eq!(config.validations["e2e"].timeout_seconds(), 60);
         assert_eq!(config.limits.max_files, 10_000);
+        assert!(config.risk_labels);
+    }
+
+    #[test]
+    fn risk_labels_can_be_disabled() {
+        let disabled = "version: 1\nriskMap: [{path: src/, risk: low}]\nriskLabels: false\n";
+        assert!(!load_yaml(disabled).expect("valid config").risk_labels);
+        let invalid = "version: 1\nriskMap: [{path: src/, risk: low}]\nriskLabels: maybe\n";
+        assert!(load_yaml(invalid).is_err());
     }
 
     #[test]

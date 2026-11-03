@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.10
+
+- Applies a `risk: <level>` label to the pull request, colored with the report
+  risk palette, and removes labels for other risk levels on each run.
+- Creates the repository label when missing and restores its color when it
+  drifted.
+- Adds the `riskLabels` configuration key (default `true`) and the
+  `risk_label` Action output. Label failures fail the run instead of being
+  reported as success.
+
 ## 0.1.9
 
 - Limits the Mermaid cascade graph to the five most critical impacted nodes.

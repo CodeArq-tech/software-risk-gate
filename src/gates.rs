@@ -242,6 +242,7 @@ mod tests {
             validations: BTreeMap::new(),
             approval_groups: BTreeMap::<String, ApprovalGroup>::new(),
             limits: Default::default(),
+            risk_labels: true,
         }
     }
 

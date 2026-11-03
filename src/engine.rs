@@ -276,6 +276,7 @@ mod tests {
             )]),
             approval_groups: BTreeMap::new(),
             limits: Default::default(),
+            risk_labels: true,
         };
         let result = analyze(
             &config,
@@ -309,6 +310,7 @@ mod tests {
             validations: BTreeMap::new(),
             approval_groups: BTreeMap::new(),
             limits: Default::default(),
+            risk_labels: true,
         };
         let error = analyze(
             &config,
@@ -343,6 +345,7 @@ mod tests {
             )]),
             approval_groups: BTreeMap::new(),
             limits: Default::default(),
+            risk_labels: true,
         };
         let plan = plan_policy(&config, RiskLevel::High);
         assert!(!plan.instant_merge);

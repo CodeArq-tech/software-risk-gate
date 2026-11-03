@@ -91,6 +91,12 @@ maxAstNodes limits the aggregate tree, and maxCommentBytes limits the PR
 comment. All values must be positive integers; exceeding a limit must fail the
 analysis explicitly.
 
+riskLabels is an optional boolean, true by default. When true, GitHub mode
+labels the pull request with `risk: <level>` for the final risk, using the
+colors minimal `15803d`, low `1d4ed8`, normal `b45309`, high `c2410c`, and
+danger `b91c1c`. Labels for other levels are removed. Offline and dry-run
+modes never change labels.
+
 ## Path semantics
 
 Paths are relative to the repository root, normalized, and compared with /
