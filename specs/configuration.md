@@ -66,6 +66,12 @@ only when there is no dependency link to another file belonging to any rule.
 When a direct or transitive link exists, the rule risk applies and the chain
 appears in the PR report.
 
+ignorePaths is an optional list of repository-relative path prefixes excluded
+from risk evidence and dependency-graph traversal. It is useful for generated
+files or test trees that should not change merge risk. Directory entries end in
+`/`; paths are normalized and must not escape the repository. Ignored files
+may still be parsed and reported as technical AST input.
+
 gateRules may contain any risk level. Valid fields are:
 
 - instantMerge: boolean;
@@ -84,6 +90,12 @@ limits is optional and has safe defaults. maxFiles limits traversed files,
 maxAstNodes limits the aggregate tree, and maxCommentBytes limits the PR
 comment. All values must be positive integers; exceeding a limit must fail the
 analysis explicitly.
+
+riskLabels is an optional boolean, true by default. When true, GitHub mode
+labels the pull request with `risk: <level>` for the final risk, using the
+colors minimal `15803d`, low `1d4ed8`, normal `b45309`, high `c2410c`, and
+danger `b91c1c`. Labels for other levels are removed. Offline and dry-run
+modes never change labels.
 
 ## Path semantics
 

@@ -20,6 +20,36 @@ impl RiskLevel {
         Self::High,
         Self::Danger,
     ];
+
+    /// Prefix shared by every pull-request label managed by risk-gate.
+    pub const LABEL_PREFIX: &str = "risk: ";
+
+    /// Pull-request label name for this level, such as `risk: danger`.
+    pub fn label_name(self) -> String {
+        format!("{}{self}", Self::LABEL_PREFIX)
+    }
+
+    /// Hex label color without `#`, matching the report risk palette.
+    pub fn label_color(self) -> &'static str {
+        match self {
+            Self::Minimal => "15803d",
+            Self::Low => "1d4ed8",
+            Self::Normal => "b45309",
+            Self::High => "c2410c",
+            Self::Danger => "b91c1c",
+        }
+    }
+
+    /// Label description shown by GitHub next to the label.
+    pub fn label_description(self) -> String {
+        format!("Pull-request risk calculated by risk-gate: {self}")
+    }
+
+    /// Returns the level represented by a risk-gate label name, if any.
+    pub fn from_label_name(name: &str) -> Option<Self> {
+        let level = name.strip_prefix(Self::LABEL_PREFIX)?;
+        Self::ALL.into_iter().find(|risk| risk.to_string() == level)
+    }
 }
 
 impl fmt::Display for RiskLevel {
@@ -83,6 +113,28 @@ mod tests {
         assert!(RiskLevel::from_str("critical").is_err());
         assert_eq!(RiskLevel::ALL.len(), 5);
         assert_eq!(RiskLevel::Danger.to_string(), "danger");
+    }
+
+    #[test]
+    fn risk_labels_have_stable_names_and_distinct_colors() {
+        assert_eq!(RiskLevel::Danger.label_name(), "risk: danger");
+        assert_eq!(RiskLevel::Minimal.label_color(), "15803d");
+        assert_eq!(RiskLevel::Low.label_color(), "1d4ed8");
+        assert_eq!(RiskLevel::Normal.label_color(), "b45309");
+        assert_eq!(RiskLevel::High.label_color(), "c2410c");
+        assert_eq!(RiskLevel::Danger.label_color(), "b91c1c");
+        assert!(RiskLevel::High.label_description().ends_with(": high"));
+        let colors = RiskLevel::ALL
+            .iter()
+            .map(|risk| risk.label_color())
+            .collect::<std::collections::BTreeSet<_>>();
+        assert_eq!(colors.len(), RiskLevel::ALL.len());
+        for level in RiskLevel::ALL {
+            assert_eq!(RiskLevel::from_label_name(&level.label_name()), Some(level));
+        }
+        assert_eq!(RiskLevel::from_label_name("risk: critical"), None);
+        assert_eq!(RiskLevel::from_label_name("danger"), None);
+        assert_eq!(RiskLevel::from_label_name("risk: DANGER"), None);
     }
 
     #[test]

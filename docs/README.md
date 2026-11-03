@@ -49,8 +49,9 @@ permissions:
 ~~~
 
 pull-requests: read allows file and review queries. Comment creation and
-updates use issues: write. Without it, publication fails; it must never be
-treated as implicit approval.
+updates use issues: write, which also covers creating, recoloring, adding, and
+removing the `risk: <level>` labels. Without it, publication fails; it must
+never be treated as implicit approval.
 
 ## Local modes
 

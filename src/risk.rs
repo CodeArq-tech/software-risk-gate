@@ -1,4 +1,4 @@
-use crate::config::{NewCodePolicy, RiskRule, normalize_path};
+use crate::config::{NewCodePolicy, RiskRule, normalize_path, path_matches_rule};
 use crate::domain::{AstNode, ChangedPath, ParsedFile, RiskLevel};
 use std::collections::BTreeSet;
 
@@ -49,7 +49,25 @@ pub fn assess_risk_with_impact(
     changed: &[ChangedPath],
     files: &[ParsedFile],
 ) -> RiskAssessment {
-    let graph = dependency_graph(files);
+    assess_risk_with_impact_and_ignores(rules, &[], changed, files)
+}
+
+pub fn assess_risk_with_impact_and_ignores(
+    rules: &[RiskRule],
+    ignore_paths: &[String],
+    changed: &[ChangedPath],
+    files: &[ParsedFile],
+) -> RiskAssessment {
+    let changed = changed
+        .iter()
+        .filter(|changed_path| !is_ignored_path(&changed_path.path, ignore_paths))
+        .collect::<Vec<_>>();
+    let files = files
+        .iter()
+        .filter(|file| !is_ignored_path(&file.path, ignore_paths))
+        .cloned()
+        .collect::<Vec<_>>();
+    let graph = dependency_graph(&files);
     let mut evidence = Vec::new();
     let mut impact = Vec::new();
     for changed_path in changed {
@@ -68,7 +86,7 @@ pub fn assess_risk_with_impact(
                 Some(selected) if rule.risk > selected.risk => Some(rule),
                 Some(selected) => Some(selected),
             });
-            let impacted = impact_paths(&normalized, rules, &graph);
+            let impacted = impact_paths(&normalized, rules, &graph, selected.copied());
             let isolated_new_code = changed_path.is_new
                 && selected.is_some_and(|rule| rule.new_code_policy == NewCodePolicy::Ignore)
                 && impacted.is_empty();
@@ -115,6 +133,13 @@ pub fn assess_risk_with_impact(
         evidence,
         impact,
     }
+}
+
+fn is_ignored_path(path: &str, ignore_paths: &[String]) -> bool {
+    let normalized = normalize_path(path).unwrap_or_else(|_| path.replace('\\', "/"));
+    ignore_paths
+        .iter()
+        .any(|rule| path_matches_rule(&normalized, rule))
 }
 
 pub fn graph_impacts(changed: &[ChangedPath], files: &[ParsedFile]) -> Vec<GraphImpact> {
@@ -258,11 +283,16 @@ fn impact_paths<'a>(
     changed: &str,
     rules: &'a [RiskRule],
     graph: &[DependencyEdge],
+    initial_rule: Option<&'a RiskRule>,
 ) -> Vec<(String, &'a RiskRule, Vec<String>)> {
-    let mut queue = vec![(changed.to_owned(), vec![changed.to_owned()])];
+    const MAX_PROPAGATED_IMPACTS: usize = 256;
+    let mut queue = vec![(changed.to_owned(), vec![changed.to_owned()], initial_rule)];
     let mut visited = std::collections::BTreeSet::from([changed.to_owned()]);
     let mut result = Vec::new();
-    while let Some((current, path)) = queue.pop() {
+    while let Some((current, path, inherited_rule)) = queue.pop() {
+        if result.len() >= MAX_PROPAGATED_IMPACTS {
+            break;
+        }
         for neighbor in graph.iter().filter_map(|edge| {
             if edge.from == current {
                 Some(edge.to.clone())
@@ -277,14 +307,18 @@ fn impact_paths<'a>(
             }
             let mut next_path = path.clone();
             next_path.push(neighbor.clone());
-            if let Some(rule) = rules
+            let rule = rules
                 .iter()
                 .filter(|rule| matches_path(&neighbor, &rule.path))
                 .max_by_key(|rule| rule.risk)
-            {
+                .or(inherited_rule);
+            if let Some(rule) = rule {
                 result.push((neighbor.clone(), rule, next_path.clone()));
             }
-            queue.push((neighbor, next_path));
+            queue.push((neighbor, next_path, rule));
+            if result.len() >= MAX_PROPAGATED_IMPACTS {
+                break;
+            }
         }
     }
     result
@@ -317,15 +351,7 @@ fn graph_paths(changed: &str, graph: &[DependencyEdge]) -> Vec<(String, Vec<Stri
 }
 
 fn matches_path(path: &str, rule: &str) -> bool {
-    let normalized_rule = rule.replace('\\', "/");
-    if normalized_rule == "./" {
-        return true;
-    }
-    if normalized_rule.ends_with('/') {
-        path.starts_with(&normalized_rule)
-    } else {
-        path == normalized_rule || path.starts_with(&(normalized_rule + "/"))
-    }
+    path_matches_rule(path, rule)
 }
 
 fn collect_module_names(node: &AstNode) -> Vec<String> {
@@ -518,6 +544,39 @@ mod tests {
     }
 
     #[test]
+    fn excludes_configured_paths_from_risk_and_graph_analysis() {
+        let files = vec![
+            ParsedFile {
+                path: "src/payment/core.py".into(),
+                language: Some("python".into()),
+                root: None,
+                error: None,
+                references: vec![],
+            },
+            ParsedFile {
+                path: "tests/payment_test.py".into(),
+                language: Some("python".into()),
+                root: None,
+                error: None,
+                references: vec!["src.payment.core".into()],
+            },
+        ];
+        let result = assess_risk_with_impact_and_ignores(
+            &[rule("src/payment/", RiskLevel::Danger)],
+            &["tests/".into()],
+            &[ChangedPath {
+                path: "tests/payment_test.py".into(),
+                old_path: None,
+                is_new: false,
+            }],
+            &files,
+        );
+        assert_eq!(result.risk, RiskLevel::Normal);
+        assert!(result.evidence.is_empty());
+        assert!(result.impact.is_empty());
+    }
+
+    #[test]
     fn includes_transitive_cascade_for_new_code_connected_to_risk_path() {
         let rules = vec![RiskRule {
             path: "src/payment/".into(),
@@ -586,6 +645,60 @@ mod tests {
         );
         assert_eq!(result.risk, RiskLevel::Danger);
         assert_eq!(result.impact[0].rule, "src/payment/");
+    }
+
+    #[test]
+    fn propagates_critical_risk_to_downstream_cascade_modules() {
+        let files = vec![
+            ParsedFile {
+                path: "src/payment/core.py".into(),
+                language: Some("python".into()),
+                root: None,
+                error: None,
+                references: vec!["../billing/invoice".into()],
+            },
+            ParsedFile {
+                path: "src/billing/invoice.py".into(),
+                language: Some("python".into()),
+                root: None,
+                error: None,
+                references: vec!["../reporting/export".into()],
+            },
+            ParsedFile {
+                path: "src/reporting/export.py".into(),
+                language: Some("python".into()),
+                root: None,
+                error: None,
+                references: vec![],
+            },
+            ParsedFile {
+                path: "src/new.py".into(),
+                language: Some("python".into()),
+                root: None,
+                error: None,
+                references: vec!["./payment/core".into()],
+            },
+        ];
+        let result = assess_risk_with_impact(
+            &[rule("src/payment/", RiskLevel::Danger)],
+            &[ChangedPath {
+                path: "src/new.py".into(),
+                old_path: None,
+                is_new: false,
+            }],
+            &files,
+        );
+
+        assert!(result.impact.iter().any(|impact| {
+            impact.related_path == "src/reporting/export.py"
+                && impact.path
+                    == [
+                        "src/new.py",
+                        "src/payment/core.py",
+                        "src/billing/invoice.py",
+                        "src/reporting/export.py",
+                    ]
+        }));
     }
 
     #[test]

@@ -23,7 +23,9 @@ fn cli_init_creates_permissive_commented_config() {
     assert!(contents.contains("minimal | low | normal | high | danger"));
     assert!(contents.contains("instantMerge: true"));
     assert!(contents.contains("newCodePolicy: include"));
-    assert!(risk_gate::config::Config::load(path).is_ok());
+    assert!(contents.contains("riskLabels: true"));
+    let config = risk_gate::config::Config::load(path).unwrap();
+    assert!(config.risk_labels);
 }
 
 #[test]
@@ -157,21 +159,119 @@ fn cli_runs_github_mode_and_writes_outputs() {
         .with_header("content-type", "application/json")
         .with_body(r#"{"id":3,"body":"report","html_url":"https://example.test/report"}"#)
         .create();
+    let label = server
+        .mock("GET", "/repos/o/r/labels/risk%3A%20high")
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(r#"{"name":"risk: high","color":"c2410c"}"#)
+        .create();
+    let current_labels = server
+        .mock("GET", "/repos/o/r/issues/1/labels?per_page=100&page=1")
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body("[]")
+        .create();
+    let add_label = server
+        .mock("POST", "/repos/o/r/issues/1/labels")
+        .match_body(mockito::Matcher::Json(
+            serde_json::json!({"labels": ["risk: high"]}),
+        ))
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(r#"[{"name":"risk: high","color":"c2410c"}]"#)
+        .create();
+    let directory = github_mode_checkout("");
+    let output = run_github_mode(&directory, &server.url()).success();
+    output.stdout(predicate::str::contains("Risk Gate"));
+    let written = fs::read_to_string(directory.path().join("output")).unwrap();
+    assert!(written.contains("risk=high"));
+    assert!(written.contains("risk_label=risk: high"));
+    files.assert();
+    comments.assert();
+    create.assert();
+    label.assert();
+    current_labels.assert();
+    add_label.assert();
+}
+
+#[test]
+fn cli_github_mode_skips_labels_when_disabled() {
+    let mut server = mockito::Server::new();
+    let _report = github_report_mocks(&mut server);
+    let no_labels = server
+        .mock("GET", mockito::Matcher::Regex("labels".into()))
+        .expect(0)
+        .create();
+    let directory = github_mode_checkout("riskLabels: false\n");
+    run_github_mode(&directory, &server.url()).success();
+    let written = fs::read_to_string(directory.path().join("output")).unwrap();
+    assert!(written.contains("risk=high"));
+    assert!(!written.contains("risk_label"));
+    no_labels.assert();
+}
+
+#[test]
+fn cli_github_mode_fails_when_label_cannot_be_applied() {
+    let mut server = mockito::Server::new();
+    let _report = github_report_mocks(&mut server);
+    let forbidden = server
+        .mock("GET", "/repos/o/r/labels/risk%3A%20high")
+        .with_status(403)
+        .with_body("Resource not accessible by integration")
+        .create();
+    let directory = github_mode_checkout("");
+    run_github_mode(&directory, &server.url())
+        .failure()
+        .code(3)
+        .stderr(predicate::str::contains("cannot apply risk label"));
+    let written = fs::read_to_string(directory.path().join("output")).unwrap();
+    assert!(written.contains("risk=high"));
+    assert!(!written.contains("risk_label"));
+    forbidden.assert();
+}
+
+fn github_report_mocks(server: &mut mockito::ServerGuard) -> Vec<mockito::Mock> {
+    vec![
+        server
+            .mock("GET", "/repos/o/r/pulls/1/files?per_page=100&page=1")
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body(r#"[{"filename":"src/main.py","status":"modified"}]"#)
+            .create(),
+        server
+            .mock("GET", "/repos/o/r/issues/1/comments?per_page=100&page=1")
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body("[]")
+            .create(),
+        server
+            .mock("POST", "/repos/o/r/issues/1/comments")
+            .with_status(201)
+            .with_header("content-type", "application/json")
+            .with_body(r#"{"id":3,"body":"report","html_url":"https://example.test/report"}"#)
+            .create(),
+    ]
+}
+
+fn github_mode_checkout(extra_config: &str) -> tempfile::TempDir {
     let directory = tempdir().unwrap();
     fs::create_dir(directory.path().join("src")).unwrap();
     fs::write(directory.path().join("src/main.py"), "print(1)\n").unwrap();
     fs::write(
         directory.path().join("risk.yaml"),
-        "version: 1\nriskMap:\n  - path: src/\n    risk: high\n",
+        format!("version: 1\nriskMap:\n  - path: src/\n    risk: high\n{extra_config}"),
     )
     .unwrap();
-    let event = directory.path().join("event.json");
     fs::write(
-        &event,
+        directory.path().join("event.json"),
         r#"{"number":1,"pull_request":{"base":{"sha":"base"},"head":{"sha":"head"}}}"#,
     )
     .unwrap();
-    let output = binary()
+    directory
+}
+
+fn run_github_mode(directory: &tempfile::TempDir, api_url: &str) -> assert_cmd::assert::Assert {
+    binary()
         .args([
             "--config",
             "risk.yaml",
@@ -184,18 +284,11 @@ fn cli_runs_github_mode_and_writes_outputs() {
             "--repository",
             "o/r",
             "--api-url",
-            &server.url(),
+            api_url,
         ])
         .env("GITHUB_OUTPUT", directory.path().join("output"))
         .current_dir(directory.path())
         .assert()
-        .success();
-    output.stdout(predicate::str::contains("Risk Gate"));
-    let written = fs::read_to_string(directory.path().join("output")).unwrap();
-    assert!(written.contains("risk=high"));
-    files.assert();
-    comments.assert();
-    create.assert();
 }
 
 #[test]

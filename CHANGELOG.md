@@ -1,5 +1,40 @@
 # Changelog
 
+## 0.1.10
+
+- Applies a `risk: <level>` label to the pull request, colored with the report
+  risk palette, and removes labels for other risk levels on each run.
+- Creates the repository label when missing and restores its color when it
+  drifted.
+- Adds the `riskLabels` configuration key (default `true`) and the
+  `risk_label` Action output. Label failures fail the run instead of being
+  reported as success.
+
+## 0.1.9
+
+- Limits the Mermaid cascade graph to the five most critical impacted nodes.
+- Collapses remaining nodes into a smaller, risk-colored `Outros X` node.
+
+## 0.1.8
+
+- Propagates mapped risk through downstream modules in the connected dependency
+  component so cascade effects remain visible in the bounded graph.
+- Caps propagated evidence at 256 impacts to keep analysis resources bounded.
+
+## 0.1.7
+
+- Restores additional bounded cascade nodes by ordering all impact chains with
+  the highest risk first instead of discarding lower-risk paths.
+- Forces black Mermaid node and edge text and uses visible colored markers in
+  the external risk legend.
+
+## 0.1.6
+
+- Moves the risk legend outside the Mermaid impact graph so the diagram stays
+  focused on module relationships.
+- Keeps risk colors in the report legend and preserves colored nodes in the
+  graph.
+
 ## 0.1.0
 
 - Implements AST analysis for Python, JavaScript, TypeScript, and Elixir.

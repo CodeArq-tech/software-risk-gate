@@ -161,6 +161,10 @@ riskMap:
     description: "Default repository rule" # text shown in the pull-request report
     newCodePolicy: include           # include | ignore; ignore isolated, additive new code
 
+ignorePaths:                         # optional paths excluded from risk and graph analysis
+  # - tests/                          # directory prefix; ignored files are not risk evidence
+  # - generated/                      # use / and repository-relative paths
+
 gateRules:
   minimal:
     instantMerge: true               # true | false; true reports the risk without blocking the merge
@@ -190,6 +194,8 @@ limits:
   maxFiles: 10000                     # positive AST file limit
   maxAstNodes: 1000000                # positive AST node limit
   maxCommentBytes: 60000              # maximum report/comment size in bytes
+
+riskLabels: true                      # true | false; label the PR with risk: <level>
 "#
 }
 
@@ -303,6 +309,12 @@ fn run_github(cli: &Cli, config: &Config) -> Result<(), String> {
     write_output("merge_blocked", &result.gate.merge_blocked.to_string());
     if let Some(url) = &comment.url {
         write_output("report_url", url);
+    }
+    if config.risk_labels {
+        let label = api
+            .sync_risk_label(result.assessment.risk)
+            .map_err(|error| format!("cannot apply risk label: {error}"))?;
+        write_output("risk_label", &label.name);
     }
     println!("{}", result.report);
     if result.gate.merge_blocked {

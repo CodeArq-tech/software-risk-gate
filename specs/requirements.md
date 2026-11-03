@@ -27,6 +27,10 @@ Paths are relative to the repository root, use /, and are normalized. A
 directory rule ends with /; a file rule can be exact. The root rule ./ matches
 the entire repository.
 
+An optional ignorePaths list uses the same normalized path rules. Ignored paths
+must be excluded from risk evidence and dependency-graph traversal, while
+remaining available for technical parsing diagnostics.
+
 ## FR-04 — Pull Request risk
 
 The diff must come from PR commits and include added, modified, renamed, and
@@ -48,8 +52,23 @@ file with no graph path to any risk rule. Connected new code keeps its
 applicable risk. The report must show the files and chain that caused risk;
 ignored isolated code must also be explicit.
 
-The report must include a Mermaid diagram showing the changed module, affected
-modules, and traversal order.
+The report must include a navigable Mermaid diagram showing the changed module,
+affected modules, and traversal order. To keep the PR comment readable, the
+diagram must be a bounded summary: it prioritizes the highest risk found among
+graph impacts, then includes the available cascade chains in risk order,
+deduplicates equal chains, and displays the cascade paths from those impacts.
+The diagram must show at most five real impacted nodes, selected by risk and a
+stable path tie-breaker. Any additional nodes must be collapsed into one
+smaller `Outros X` node, where `X` is the number omitted; that aggregate node
+must use the color of the highest risk among its omitted nodes. Lower-priority
+or duplicate chains may be omitted, but the report must state how many were
+omitted. The diagram must use a
+top-to-bottom layout with wrapped labels, readable spacing, and increased
+visual scale. Evidence, AST diagnostics, validations, and approvals should be
+collapsed in HTML details blocks so they do not compete with the graph.
+The risk legend must be rendered as compact colored text immediately above the
+Mermaid block, outside the diagram, using visible colored markers and black
+labels; it must not add legend nodes or edges to the Mermaid graph.
 
 ## FR-05 — Risk gates
 
@@ -88,7 +107,7 @@ Every analysis must generate an idempotent PR comment containing:
 1. final risk and ordered level;
 2. files and modules that determined maximum risk;
 3. path descriptions;
-4. graph impact and Mermaid cascade;
+4. a bounded, highest-risk graph impact summary and navigable Mermaid cascade;
 5. limitations, missing parsers, and PARTIAL or FAILED states;
 6. validation and approval results;
 7. Risk Gate identifier and version.

@@ -1,6 +1,6 @@
 use crate::config::ApprovalGroup;
 use crate::diff::{DiffError, DiffProvider};
-use crate::domain::ChangedPath;
+use crate::domain::{ChangedPath, RiskLevel};
 use crate::gates::{ApprovalCheck, ApprovalChecker, GateError};
 use crate::report::replace_marked_comment;
 use reqwest::blocking::{Client, RequestBuilder};
@@ -213,6 +213,87 @@ impl GithubApi {
         })
     }
 
+    /// Applies the `risk: <level>` label to the pull request.
+    ///
+    /// The repository label is created with the risk color when missing and
+    /// recolored when it drifted. Labels for other risk levels are removed so
+    /// the pull request carries exactly one risk label after each run.
+    pub fn sync_risk_label(&self, risk: RiskLevel) -> Result<LabelResult, GithubError> {
+        let name = risk.label_name();
+        let created = self.ensure_risk_label(risk)?;
+        let mut removed = Vec::new();
+        for label in self.pull_request_labels()? {
+            if RiskLevel::from_label_name(&label.name).is_some_and(|level| level != risk) {
+                let url = self.endpoint(&format!(
+                    "/repos/{}/issues/{}/labels/{}",
+                    self.repository,
+                    self.pull_number,
+                    encode_path_segment(&label.name)
+                ));
+                let _: Vec<Label> = self.send(self.client.delete(url))?;
+                removed.push(label.name);
+            }
+        }
+        let url = self.endpoint(&format!(
+            "/repos/{}/issues/{}/labels",
+            self.repository, self.pull_number
+        ));
+        let _: Vec<Label> = self.send(self.client.post(url).json(&AddLabelsBody {
+            labels: vec![name.clone()],
+        }))?;
+        Ok(LabelResult {
+            name,
+            created,
+            removed,
+        })
+    }
+
+    fn ensure_risk_label(&self, risk: RiskLevel) -> Result<bool, GithubError> {
+        let name = risk.label_name();
+        let label_url = self.endpoint(&format!(
+            "/repos/{}/labels/{}",
+            self.repository,
+            encode_path_segment(&name)
+        ));
+        let definition = LabelDefinition {
+            name: name.clone(),
+            color: risk.label_color().to_owned(),
+            description: risk.label_description(),
+        };
+        match self.send::<Label>(self.client.get(label_url.as_str())) {
+            Ok(existing) => {
+                if !existing.color.eq_ignore_ascii_case(risk.label_color()) {
+                    let _: Label = self.send(self.client.patch(label_url).json(&definition))?;
+                }
+                Ok(false)
+            }
+            Err(GithubError::Http { status: 404, .. }) => {
+                let url = self.endpoint(&format!("/repos/{}/labels", self.repository));
+                let _: Label = self.send(self.client.post(url).json(&definition))?;
+                Ok(true)
+            }
+            Err(error) => Err(error),
+        }
+    }
+
+    fn pull_request_labels(&self) -> Result<Vec<Label>, GithubError> {
+        let mut page = 1;
+        let mut result = Vec::new();
+        loop {
+            let url = self.endpoint(&format!(
+                "/repos/{}/issues/{}/labels?per_page=100&page={page}",
+                self.repository, self.pull_number
+            ));
+            let labels: Vec<Label> = self.send(self.client.get(url))?;
+            let count = labels.len();
+            result.extend(labels);
+            if count < 100 {
+                return Ok(result);
+            }
+            page += 1;
+        }
+    }
+
     fn endpoint(&self, path: &str) -> String {
         format!("{}{}", self.base_url, path)
     }
@@ -269,6 +350,13 @@ pub struct CommentResult {
     pub url: Option<String>,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct LabelResult {
+    pub name: String,
+    pub created: bool,
+    pub removed: Vec<String>,
+}
+
 #[derive(Debug, Deserialize)]
 struct PullFile {
     filename: String,
@@ -294,6 +382,22 @@ struct Comment {
 struct CommentBody {
     body: String,
 }
+#[derive(Debug, Deserialize)]
+struct Label {
+    name: String,
+    #[serde(default)]
+    color: String,
+}
+#[derive(Debug, Serialize)]
+struct LabelDefinition {
+    name: String,
+    color: String,
+    description: String,
+}
+#[derive(Debug, Serialize)]
+struct AddLabelsBody {
+    labels: Vec<String>,
+}
 
 fn validate_repository(repository: &str) -> Result<(), GithubError> {
     let (owner, name) = repository.split_once('/').unwrap_or(("", ""));
@@ -301,6 +405,18 @@ fn validate_repository(repository: &str) -> Result<(), GithubError> {
         return Err(GithubError::Repository(repository.to_owned()));
     }
     Ok(())
+}
+
+fn encode_path_segment(value: &str) -> String {
+    value
+        .bytes()
+        .map(|byte| match byte {
+            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' => {
+                (byte as char).to_string()
+            }
+            _ => format!("%{byte:02X}"),
+        })
+        .collect()
 }
 
 fn truncate(value: &str) -> String {
@@ -562,6 +678,176 @@ mod tests {
             panic!("expected HTTP error");
         }
         long_error.assert();
+    }
+
+    #[test]
+    fn encodes_label_names_as_path_segments() {
+        assert_eq!(encode_path_segment("risk: danger"), "risk%3A%20danger");
+        assert_eq!(encode_path_segment("a/b~c.d_e-f"), "a%2Fb~c.d_e-f");
+        assert_eq!(encode_path_segment("ç"), "%C3%A7");
+    }
+
+    #[test]
+    fn creates_missing_risk_label_and_replaces_stale_risk_labels() {
+        let mut server = mockito::Server::new();
+        let lookup = server
+            .mock("GET", "/repos/o/r/labels/risk%3A%20danger")
+            .with_status(404)
+            .with_body(r#"{"message":"Not Found"}"#)
+            .create();
+        let create = server
+            .mock("POST", "/repos/o/r/labels")
+            .match_body(mockito::Matcher::Json(serde_json::json!({
+                "name": "risk: danger",
+                "color": "b91c1c",
+                "description": "Pull-request risk calculated by risk-gate: danger"
+            })))
+            .with_status(201)
+            .with_header("content-type", "application/json")
+            .with_body(r#"{"name":"risk: danger","color":"b91c1c"}"#)
+            .create();
+        let current = server
+            .mock("GET", "/repos/o/r/issues/1/labels?per_page=100&page=1")
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body(r#"[{"name":"risk: low","color":"1d4ed8"},{"name":"bug","color":"ffffff"},{"name":"risk: danger","color":"b91c1c"}]"#)
+            .create();
+        let remove = server
+            .mock("DELETE", "/repos/o/r/issues/1/labels/risk%3A%20low")
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body(r#"[{"name":"bug","color":"ffffff"}]"#)
+            .create();
+        let add = server
+            .mock("POST", "/repos/o/r/issues/1/labels")
+            .match_body(mockito::Matcher::Json(
+                serde_json::json!({"labels": ["risk: danger"]}),
+            ))
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body(
+                r#"[{"name":"bug","color":"ffffff"},{"name":"risk: danger","color":"b91c1c"}]"#,
+            )
+            .create();
+        let api = GithubApi::new("token", "o/r", 1)
+            .unwrap()
+            .with_base_url(server.url());
+        let result = api.sync_risk_label(RiskLevel::Danger).unwrap();
+        assert_eq!(
+            result,
+            LabelResult {
+                name: "risk: danger".into(),
+                created: true,
+                removed: vec!["risk: low".into()],
+            }
+        );
+        lookup.assert();
+        create.assert();
+        current.assert();
+        remove.assert();
+        add.assert();
+    }
+
+    #[test]
+    fn recolors_drifted_risk_label_and_keeps_matching_color() {
+        let mut server = mockito::Server::new();
+        let lookup = server
+            .mock("GET", "/repos/o/r/labels/risk%3A%20high")
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body(r#"{"name":"risk: high","color":"000000"}"#)
+            .create();
+        let recolor = server
+            .mock("PATCH", "/repos/o/r/labels/risk%3A%20high")
+            .match_body(mockito::Matcher::PartialJson(
+                serde_json::json!({"color": "c2410c"}),
+            ))
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body(r#"{"name":"risk: high","color":"c2410c"}"#)
+            .create();
+        let current = server
+            .mock("GET", "/repos/o/r/issues/1/labels?per_page=100&page=1")
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body("[]")
+            .create();
+        let add = server
+            .mock("POST", "/repos/o/r/issues/1/labels")
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body(r#"[{"name":"risk: high","color":"c2410c"}]"#)
+            .create();
+        let api = GithubApi::new("token", "o/r", 1)
+            .unwrap()
+            .with_base_url(server.url());
+        let result = api.sync_risk_label(RiskLevel::High).unwrap();
+        assert!(!result.created);
+        assert!(result.removed.is_empty());
+        lookup.assert();
+        recolor.assert();
+        current.assert();
+        add.assert();
+
+        let mut same_color = mockito::Server::new();
+        let same_lookup = same_color
+            .mock("GET", "/repos/o/r/labels/risk%3A%20minimal")
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body(r#"{"name":"risk: minimal","color":"15803D"}"#)
+            .create();
+        let no_patch = same_color
+            .mock("PATCH", "/repos/o/r/labels/risk%3A%20minimal")
+            .expect(0)
+            .create();
+        let same_current = same_color
+            .mock("GET", "/repos/o/r/issues/1/labels?per_page=100&page=1")
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body(r#"[{"name":"risk: minimal","color":"15803d"}]"#)
+            .create();
+        let no_delete = same_color
+            .mock("DELETE", mockito::Matcher::Any)
+            .expect(0)
+            .create();
+        let same_add = same_color
+            .mock("POST", "/repos/o/r/issues/1/labels")
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body(r#"[{"name":"risk: minimal","color":"15803d"}]"#)
+            .create();
+        let api = GithubApi::new("token", "o/r", 1)
+            .unwrap()
+            .with_base_url(same_color.url());
+        assert!(
+            api.sync_risk_label(RiskLevel::Minimal)
+                .unwrap()
+                .removed
+                .is_empty()
+        );
+        same_lookup.assert();
+        no_patch.assert();
+        same_current.assert();
+        no_delete.assert();
+        same_add.assert();
+    }
+
+    #[test]
+    fn risk_label_permission_failure_is_reported() {
+        let mut server = mockito::Server::new();
+        let lookup = server
+            .mock("GET", "/repos/o/r/labels/risk%3A%20normal")
+            .with_status(403)
+            .with_body("Resource not accessible by integration")
+            .create();
+        let api = GithubApi::new("token", "o/r", 1)
+            .unwrap()
+            .with_base_url(server.url());
+        assert!(matches!(
+            api.sync_risk_label(RiskLevel::Normal),
+            Err(GithubError::Http { status: 403, .. })
+        ));
+        lookup.assert();
     }
 
     #[test]

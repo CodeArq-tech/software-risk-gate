@@ -32,10 +32,20 @@ For a PR execution, Risk Gate:
 6. Traverses the dependency graph for direct and transitive impact.
 7. Selects the highest applicable risk.
 8. Runs validations and checks configured approvals for that risk.
-9. Creates or updates one PR comment with evidence and a Mermaid cascade graph.
+9. Creates or updates one compact PR comment with evidence and a Mermaid
+   cascade graph.
 
 The graph can raise the risk of a change outside a critical path when the
-change depends on, or is depended on by, critical code. A new file can use
+change depends on, or is depended on by, critical code. The report graph
+prioritizes the highest propagated risk chains, includes available cascade
+paths in risk order, removes duplicates, and bounds the graph to five real
+impacted nodes. Additional nodes are represented by a smaller `Outros X` node,
+colored according to the highest omitted risk, so the rendered Mermaid diagram
+remains readable and navigable in the PR. It is
+rendered top-to-bottom, uses wrapped path labels and larger spacing, forces
+black node text, and keeps evidence and gate details collapsed so the graph is
+the visual focus. It reports how many lower-priority chains were omitted.
+A new file can use
 newCodePolicy: ignore when it is isolated; any direct or transitive connection
 keeps it in the risk calculation.
 
@@ -105,7 +115,27 @@ SHA-256 checksum. The version input selects another published release:
     version: v0.1.0
 ~~~
 
-Action outputs are risk, status, merge_blocked, and report_url.
+Action outputs are risk, status, merge_blocked, report_url, and risk_label.
+
+### Risk label
+
+After publishing the report, the Action labels the pull request with its final
+risk so it is visible in pull-request lists and filters:
+
+| Risk    | Label           | Color     |
+|---------|-----------------|-----------|
+| minimal | `risk: minimal` | `#15803d` |
+| low     | `risk: low`     | `#1d4ed8` |
+| normal  | `risk: normal`  | `#b45309` |
+| high    | `risk: high`    | `#c2410c` |
+| danger  | `risk: danger`  | `#b91c1c` |
+
+Missing repository labels are created with these colors, and a recolored label
+is restored. Labels for other risk levels are removed, so a pull request whose
+risk changes between pushes carries only the current one. Set
+`riskLabels: false` in .risk-gate.yaml to disable labeling. The label uses the
+same issues: write permission as the report comment; a labeling failure fails
+the run.
 
 ## .risk-gate.yaml
 
@@ -129,6 +159,10 @@ riskMap:
     risk: normal
     description: "Runtime instructions"
     newCodePolicy: ignore
+
+ignorePaths:
+  - generated/
+  - tests/                         # optional: exclude a path from risk and graph analysis
 
 gateRules:
   minimal:
@@ -157,6 +191,8 @@ limits:
   maxFiles: 10000
   maxAstNodes: 1000000
   maxCommentBytes: 60000
+
+riskLabels: true                   # optional: label the PR with risk: <level>
 ~~~
 
 Risk levels are ordered:

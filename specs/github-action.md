@@ -12,7 +12,18 @@ The Action must publish outputs consumable by later jobs:
 - risk: final risk level;
 - status: technical analysis status;
 - merge_blocked: whether configured gates block mergeability;
-- report_url or a comment identifier, when available.
+- report_url or a comment identifier, when available;
+- risk_label: the `risk: <level>` label applied to the pull request, when
+  riskLabels is enabled.
+
+## Risk label
+
+In GitHub mode, after the report comment is published and when riskLabels is
+true, the Action must ensure the repository label for the final risk exists
+with the configured risk color, recolor it when it drifted, remove labels of
+other risk levels from the pull request, and add the current one. The label
+name and color are deterministic functions of the risk level. A failed label
+request must fail the run with a visible error; it is never treated as success.
 
 The process may exit with code zero only when configuration is valid, analysis
 is non-fatal, all required validations succeed, required approvals are
