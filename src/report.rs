@@ -272,7 +272,7 @@ fn render_impact_mermaid(assessment: &RiskAssessment) -> String {
         let id = &ids[path];
         output.push_str(&format!("    {id}[\"{}\"]\n", escape_mermaid_label(path)));
     }
-    if let Some(risk) = omitted_risk {
+    if omitted_risk.is_some() {
         let id = &ids[OMITTED_NODES_KEY];
         output.push_str(&format!("    {id}[\"Outros {}\"]\n", omitted_nodes.len()));
     }
