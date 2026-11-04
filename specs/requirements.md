@@ -43,12 +43,15 @@ with no changed files is invalid for analysis and must fail.
 ### FR-04.1 — Cascade impact and isolated new code
 
 The analyzer must build a reference graph between files and modules identified
-by the parser. Impact search considers transitive chains in both directions:
-new code using a critical area and existing code that starts using new code are
-both impact evidence.
+by the parser. Impact search follows references backwards: a changed file is
+impacted by the mapped modules that depend on it, directly or transitively,
+because only dependents can break when it changes. Code that the changed file
+merely uses, and modules that only share a dependency with it, must not raise
+its risk. An unmapped module in a chain carries no rule of its own and must not
+inherit the rule of a neighbor.
 
 A rule may declare newCodePolicy: ignore. This exception applies only to a new
-file with no graph path to any risk rule. Connected new code keeps its
+file with no graph path, in either direction, to any risk rule. Connected new code keeps its
 applicable risk. The report must show the files and chain that caused risk;
 ignored isolated code must also be explicit.
 
