@@ -101,7 +101,7 @@ pub fn render_markdown_limited(input: &ReportInput<'_>, max_bytes: usize) -> Str
         output.push_str("<details>\n<summary>Impact chain details</summary>\n\n");
         for impact in impacts {
             output.push_str(&format!(
-                "- `{}` is connected to `{}` → **{}** (rule `{}`)",
+                "- `{}` is used by `{}` → **{}** (rule `{}`)",
                 escape_code(&impact.changed_path),
                 escape_code(&impact.related_path),
                 impact.risk,

@@ -29,14 +29,16 @@ For a PR execution, Risk Gate:
 4. Extracts modules and references from Python, JavaScript, TypeScript, and
    Elixir.
 5. Maps changed files and modules to riskMap rules.
-6. Traverses the dependency graph for direct and transitive impact.
+6. Traverses the dependency graph to find mapped code that depends on the change.
 7. Selects the highest applicable risk.
 8. Runs validations and checks configured approvals for that risk.
 9. Creates or updates one compact PR comment with evidence and a Mermaid
    cascade graph.
 
-The graph can raise the risk of a change outside a critical path when the
-change depends on, or is depended on by, critical code. The report graph
+The graph can raise the risk of a change outside a critical path when critical
+code depends on it, directly or transitively. Using critical code does not raise
+the risk: a script that calls payment code without changing it keeps the risk
+of its own path. The report graph
 prioritizes the highest propagated risk chains, includes available cascade
 paths in risk order, removes duplicates, and bounds the graph to five real
 impacted nodes. Additional nodes are represented by a smaller `Outros X` node,

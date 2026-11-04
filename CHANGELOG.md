@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.1.11
+
+- Raises the risk of a changed file only through mapped modules that depend on
+  it, directly or transitively. Code that the changed file merely uses, and
+  modules that only share a dependency with it, no longer raise its risk.
+- Unmapped modules in an impact chain no longer inherit the rule of the
+  previous module, so the report only cites rules that really match.
+- Impact chain details now read "is used by" to state the dependency direction.
+- newCodePolicy: ignore keeps its contract: a new file stays isolated only when
+  no graph path in either direction reaches mapped code.
+
 ## 0.1.10
 
 - Applies a `risk: <level>` label to the pull request, colored with the report
