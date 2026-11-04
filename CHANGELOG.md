@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.1.12
+
+- Keeps the report within `maxCommentBytes` by dropping whole sections, in
+  order: cascade graph, impact chain details, then risk evidence. The report
+  states which sections were omitted. The header and the technical details,
+  which explain PARTIAL and FAILED states, are always kept, and a byte cut no
+  longer leaves an unclosed Mermaid fence behind.
+- Lists each module of a changed file once, up to 12, and counts the rest.
+- Groups files that need attention by reason and lists up to 10 paths per
+  reason, with the count of the remaining ones.
+
 ## 0.1.11
 
 - Raises the risk of a changed file only through mapped modules that depend on
