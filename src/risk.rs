@@ -334,11 +334,7 @@ fn highest_matching_rule<'a>(path: &str, rules: &'a [RiskRule]) -> Option<&'a Ri
 ///
 /// Used only by newCodePolicy: ignore, whose contract treats any link to a
 /// risk area as a connection.
-fn is_linked_to_mapped_code(
-    changed: &str,
-    rules: &[RiskRule],
-    graph: &[DependencyEdge],
-) -> bool {
+fn is_linked_to_mapped_code(changed: &str, rules: &[RiskRule], graph: &[DependencyEdge]) -> bool {
     graph_paths(changed, graph)
         .iter()
         .any(|(path, _)| highest_matching_rule(path, rules).is_some())
