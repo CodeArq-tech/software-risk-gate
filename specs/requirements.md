@@ -115,6 +115,14 @@ Every analysis must generate an idempotent PR comment containing:
 6. validation and approval results;
 7. Risk Gate identifier and version.
 
+The comment must fit limits.maxCommentBytes. Long lists are bounded: each
+changed file lists up to 12 distinct modules, and files that need attention
+are grouped by reason with up to 10 paths each, always with the count of the
+rest. When the report still does not fit, whole sections are dropped in this
+order: Mermaid cascade, impact chain details, risk evidence. The report names
+the dropped sections. Items 1, 5, 6, and 7 are never dropped, and no dropped
+section may leave an unclosed code fence or details block.
+
 When the stable marker <!-- risk-gate:report --> already exists, the comment
 must be updated instead of creating another message.
 
